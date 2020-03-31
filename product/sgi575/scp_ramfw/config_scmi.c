@@ -5,19 +5,22 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include "scp_sgi575_scmi.h"
+
+#include <internal/scmi.h>
+
+#include <mod_scmi.h>
+#include <mod_smt.h>
+
 #include <fwk_element.h>
 #include <fwk_id.h>
 #include <fwk_macros.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
-#include <internal/scmi.h>
-#include <mod_scmi.h>
-#include <mod_smt.h>
-#include <scp_sgi575_scmi.h>
 
 static const struct fwk_element service_table[] = {
     [SCP_SGI575_SCMI_SERVICE_IDX_PSCI] = {
-        .name = "SERVICE0",
+        .name = "PSCI",
         .data = &((struct mod_scmi_service_config) {
             .transport_id = FWK_ID_ELEMENT_INIT(
                 FWK_MODULE_IDX_SMT,
@@ -32,7 +35,7 @@ static const struct fwk_element service_table[] = {
         }),
     },
     [SCP_SGI575_SCMI_SERVICE_IDX_OSPM] = {
-        .name = "SERVICE1",
+        .name = "OSPM",
         .data = &((struct mod_scmi_service_config) {
             .transport_id = FWK_ID_ELEMENT_INIT(
                 FWK_MODULE_IDX_SMT,

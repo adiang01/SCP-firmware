@@ -5,25 +5,18 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <fwk_element.h>
-#include <fwk_module.h>
-#include <fwk_module_idx.h>
+#include <config_sensor.h>
+
 #include <mod_juno_adc.h>
 #include <mod_sensor.h>
 
+#include <fwk_element.h>
+#include <fwk_id.h>
+#include <fwk_module.h>
+
 static const struct fwk_element adc_juno_element_table[] = {
-    [ADC_TYPE_CURRENT] = {
-        .name = "ADC-I",
-        .sub_element_count = ADC_DEV_TYPE_COUNT,
-        .data = &((struct mod_juno_adc_dev_config) {
-            .info = &((struct mod_sensor_info) {
-                .type = MOD_SENSOR_TYPE_AMPS,
-                .unit_multiplier = -3,
-            }),
-        }),
-    },
     [ADC_TYPE_VOLT] = {
-        .name = "ADC-V",
+        .name = "",
         .sub_element_count = ADC_DEV_TYPE_COUNT,
         .data = &((struct mod_juno_adc_dev_config) {
             .info = &((struct mod_sensor_info) {
@@ -32,8 +25,20 @@ static const struct fwk_element adc_juno_element_table[] = {
             }),
         }),
     },
+
+    #if USE_FULL_SET_SENSORS
+    [ADC_TYPE_CURRENT] = {
+        .name = "",
+        .sub_element_count = ADC_DEV_TYPE_COUNT,
+        .data = &((struct mod_juno_adc_dev_config) {
+            .info = &((struct mod_sensor_info) {
+                .type = MOD_SENSOR_TYPE_AMPS,
+                .unit_multiplier = -3,
+            }),
+        }),
+    },
     [ADC_TYPE_POWER] = {
-        .name = "ADC-W",
+        .name = "",
         .sub_element_count = ADC_DEV_TYPE_COUNT,
         .data = &((struct mod_juno_adc_dev_config) {
             .info = &((struct mod_sensor_info) {
@@ -43,7 +48,7 @@ static const struct fwk_element adc_juno_element_table[] = {
         }),
     },
     [ADC_TYPE_ENERGY] = {
-        .name = "ADC-J",
+        .name = "",
         .sub_element_count = ADC_DEV_TYPE_COUNT,
         .data = &((struct mod_juno_adc_dev_config) {
             .info = &((struct mod_sensor_info) {
@@ -52,6 +57,8 @@ static const struct fwk_element adc_juno_element_table[] = {
             }),
         }),
     },
+    #endif
+
     [ADC_TYPE_COUNT] = { 0 },
 };
 

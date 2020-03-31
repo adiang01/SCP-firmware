@@ -5,13 +5,17 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include "scp_sgi575_mmap.h"
+
+#include <mod_log.h>
+#include <mod_pl011.h>
+
 #include <fwk_banner.h>
+#include <fwk_element.h>
+#include <fwk_id.h>
 #include <fwk_macros.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
-#include <mod_log.h>
-#include <mod_pl011.h>
-#include <scp_sgi575_mmap.h>
 
 /*
  * PL011 module
@@ -24,6 +28,7 @@ static const struct fwk_element pl011_element_desc_table[] = {
             .baud_rate_bps = 115200,
             .clock_rate_hz = 24 * FWK_MHZ,
             .clock_id = FWK_ID_NONE_INIT,
+            .pd_id = FWK_ID_NONE_INIT,
             }),
     },
     [1] = { 0 },
@@ -44,13 +49,8 @@ struct fwk_module_config config_pl011 = {
 static const struct mod_log_config log_data = {
     .device_id = FWK_ID_ELEMENT_INIT(FWK_MODULE_IDX_PL011, 0),
     .api_id = FWK_ID_API_INIT(FWK_MODULE_IDX_PL011, 0),
-    .log_groups = MOD_LOG_GROUP_ERROR |
-                  MOD_LOG_GROUP_INFO |
-                  MOD_LOG_GROUP_WARNING |
-                  MOD_LOG_GROUP_DEBUG,
-    .banner = FWK_BANNER_SCP
-              FWK_BANNER_RAM_FIRMWARE
-              BUILD_VERSION_DESCRIBE_STRING "\n",
+    .banner =
+        FWK_BANNER_SCP FWK_BANNER_RAM_FIRMWARE BUILD_VERSION_DESCRIBE_STRING,
 };
 
 struct fwk_module_config config_log = {

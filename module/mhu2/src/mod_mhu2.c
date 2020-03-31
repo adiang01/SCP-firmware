@@ -8,8 +8,11 @@
  *      Message Handling Unit (MHU) v2 Device Driver.
  */
 
-#include <stddef.h>
-#include <stdint.h>
+#include <mhu2.h>
+
+#include <mod_mhu2.h>
+#include <mod_smt.h>
+
 #include <fwk_assert.h>
 #include <fwk_id.h>
 #include <fwk_interrupt.h>
@@ -17,9 +20,10 @@
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
 #include <fwk_status.h>
-#include <mod_mhu2.h>
-#include <mhu2.h>
-#include <mod_smt.h>
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #define MHU_SLOT_COUNT_MAX 32
 
@@ -131,11 +135,6 @@ static int mhu2_init(fwk_id_t module_id,
 
     ctx.channel_ctx_table = fwk_mm_calloc(channel_count,
         sizeof(ctx.channel_ctx_table[0]));
-    if (ctx.channel_ctx_table == NULL) {
-        /* Unable to allocate memory for channel context table */
-        assert(false);
-        return FWK_E_NOMEM;
-    }
 
     ctx.channel_count = channel_count;
 
@@ -171,10 +170,6 @@ static int mhu2_channel_init(fwk_id_t channel_id,
 
     channel_ctx->smt_channel_table =
         fwk_mm_calloc(slot_count, sizeof(channel_ctx->smt_channel_table[0]));
-    if (channel_ctx->smt_channel_table == NULL) {
-        assert(false);
-        return FWK_E_NOMEM;
-    }
 
     return FWK_SUCCESS;
 }

@@ -11,11 +11,13 @@
 #ifndef MOD_SGM775_DMC500_H
 #define MOD_SGM775_DMC500_H
 
-#include <stdint.h>
+#include <mod_timer.h>
+
+#include <fwk_id.h>
 #include <fwk_macros.h>
 #include <fwk_module.h>
-#include <mod_log.h>
-#include <mod_timer.h>
+
+#include <stdint.h>
 
 /*!
  * \addtogroup GroupSGM775Module SGM775 Product Modules

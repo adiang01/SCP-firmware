@@ -5,19 +5,27 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <stdint.h>
-#include <fwk_assert.h>
-#include <fwk_id.h>
-#include <fwk_mm.h>
-#include <fwk_module.h>
-#include <fwk_multi_thread.h>
-#include <fwk_status.h>
+#include "juno_id.h"
+
 #include <mod_i2c.h>
 #include <mod_juno_xrp7724.h>
 #include <mod_psu.h>
 #include <mod_sensor.h>
 #include <mod_timer.h>
-#include <juno_id.h>
+
+#include <fwk_assert.h>
+#include <fwk_event.h>
+#include <fwk_id.h>
+#include <fwk_mm.h>
+#include <fwk_module.h>
+#include <fwk_module_idx.h>
+#include <fwk_multi_thread.h>
+#include <fwk_status.h>
+#include <fwk_thread.h>
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 /* Maximum required length for the I2C transmissions */
 #define TRANSMIT_DATA_MAX   3
@@ -212,13 +220,12 @@ static void alarm_callback(uintptr_t param)
 /*
  * Functions for the system mode API
  */
-static void juno_xrp7724_shutdown(void)
+static int juno_xrp7724_shutdown(void)
 {
     int status;
     fwk_id_t gpio_id = fwk_id_build_element_id(fwk_module_id_juno_xrp7724,
         fwk_id_get_element_idx(module_ctx.config->gpio_mode_id));
 
-    struct fwk_event resp;
     struct fwk_event event = (struct fwk_event) {
         .target_id = gpio_id,
         .id = juno_xrp7724_event_id_request,
@@ -229,17 +236,19 @@ static void juno_xrp7724_shutdown(void)
     /* Select the mode to perform a shutdown */
     module_ctx.gpio_request = JUNO_XRP7724_GPIO_REQUEST_MODE_SHUTDOWN;
 
-    status = fwk_thread_put_event_and_wait(&event, &resp);
-    fwk_assert(status == FWK_SUCCESS);
+    status = fwk_thread_put_event(&event);
+    if (status == FWK_SUCCESS)
+        return FWK_PENDING;
+
+    return status;
 }
 
-static void juno_xrp7724_reset(void)
+static int juno_xrp7724_reset(void)
 {
     int status;
     fwk_id_t gpio_id = fwk_id_build_element_id(fwk_module_id_juno_xrp7724,
         fwk_id_get_element_idx(module_ctx.config->gpio_assert_id));
 
-    struct fwk_event resp;
     struct fwk_event event = (struct fwk_event) {
         .target_id = gpio_id,
         .id = juno_xrp7724_event_id_request,
@@ -254,8 +263,11 @@ static void juno_xrp7724_reset(void)
      */
     module_ctx.gpio_request = JUNO_XRP7724_GPIO_REQUEST_ASSERT_COLD_RESET;
 
-    status = fwk_thread_put_event_and_wait(&event, &resp);
-    fwk_assert(status == FWK_SUCCESS);
+    status = fwk_thread_put_event(&event);
+    if (status == FWK_SUCCESS)
+        return FWK_PENDING;
+
+    return status;
 }
 
 static const struct mod_juno_xrp7724_api_system_mode system_mode_api = {
@@ -270,15 +282,9 @@ static int juno_xrp7724_sensor_get_value(fwk_id_t id, uint64_t *value)
 {
     int status;
     struct fwk_event event;
-    struct juno_xrp7724_dev_ctx *ctx;
-
-    fwk_assert(fwk_module_is_valid_element_id(id));
 
     if (module_ctx.sensor_request != JUNO_XRP7724_SENSOR_REQUEST_IDLE)
         return FWK_E_BUSY;
-
-    ctx = &ctx_table[fwk_id_get_element_idx(id)];
-    fwk_assert(ctx->config->type == MOD_JUNO_XRP7724_ELEMENT_TYPE_SENSOR);
 
     event = (struct fwk_event) {
         .target_id = id,
@@ -301,10 +307,7 @@ static int juno_xrp7724_sensor_get_info(fwk_id_t id,
 {
     const struct juno_xrp7724_dev_ctx *ctx;
 
-    fwk_assert(info != NULL);
-
     ctx = &ctx_table[fwk_id_get_element_idx(id)];
-    fwk_assert(ctx->config->type == MOD_JUNO_XRP7724_ELEMENT_TYPE_SENSOR);
 
     *info = *(ctx->config->sensor_info);
 
@@ -490,8 +493,6 @@ static int juno_xrp7724_init(fwk_id_t module_id,
 
     ctx_table = fwk_mm_calloc(element_count,
         sizeof(struct juno_xrp7724_dev_ctx));
-    if (ctx_table == NULL)
-        return FWK_E_NOMEM;
 
     status = juno_id_get_platform(&platform_id);
     if (!fwk_expect(status == FWK_SUCCESS))

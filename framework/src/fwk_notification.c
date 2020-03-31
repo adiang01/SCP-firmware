@@ -8,14 +8,24 @@
  *     Notification facilities.
  */
 
-#include <fwk_assert.h>
-#include <fwk_host.h>
-#include <fwk_interrupt.h>
-#include <fwk_list.h>
-#include <fwk_mm.h>
 #include <internal/fwk_module.h>
 #include <internal/fwk_notification.h>
 #include <internal/fwk_thread.h>
+
+#include <fwk_assert.h>
+#include <fwk_dlist.h>
+#include <fwk_event.h>
+#include <fwk_id.h>
+#include <fwk_interrupt.h>
+#include <fwk_list.h>
+#include <fwk_log.h>
+#include <fwk_mm.h>
+#include <fwk_module.h>
+#include <fwk_notification.h>
+#include <fwk_status.h>
+
+#include <stdbool.h>
+#include <stddef.h>
 
 struct notification_ctx {
     /*
@@ -32,9 +42,7 @@ struct notification_ctx {
 
 static struct notification_ctx ctx;
 
-#ifdef BUILD_HOST
-static const char err_msg_func[] = "[NOT] Error %d in %s\n";
-#endif
+static const char err_msg_func[] = "[NOT] Error %d in %s";
 
 /*
  * Static functions
@@ -151,10 +159,6 @@ int __fwk_notification_init(size_t notification_count)
 
     subscription_table = fwk_mm_calloc(
         notification_count, sizeof(struct __fwk_notification_subscription));
-    if (subscription_table == NULL) {
-        FWK_HOST_PRINT(err_msg_func, FWK_E_NOMEM, __func__);
-        return FWK_E_NOMEM;
-    }
 
     /* All the subscription structures are free to be used. */
     fwk_list_init(&ctx.free_subscription_dlist);
@@ -232,7 +236,7 @@ int fwk_notification_subscribe(fwk_id_t notification_id, fwk_id_t source_id,
     return FWK_SUCCESS;
 
 error:
-    FWK_HOST_PRINT(err_msg_func, status, __func__);
+    FWK_LOG_CRIT(err_msg_func, status, __func__);
     return status;
 }
 
@@ -279,7 +283,7 @@ int fwk_notification_unsubscribe(fwk_id_t notification_id, fwk_id_t source_id,
     return FWK_SUCCESS;
 
 error:
-    FWK_HOST_PRINT(err_msg_func, status, __func__);
+    FWK_LOG_CRIT(err_msg_func, status, __func__);
     return status;
 }
 
@@ -329,6 +333,6 @@ int fwk_notification_notify(struct fwk_event *notification_event,
     return FWK_SUCCESS;
 
 error:
-    FWK_HOST_PRINT(err_msg_func, status, __func__);
+    FWK_LOG_CRIT(err_msg_func, status, __func__);
     return status;
 }

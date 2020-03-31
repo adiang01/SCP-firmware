@@ -5,10 +5,16 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <fwk_element.h>
-#include <fwk_module.h>
+#include "config_mock_psu.h"
+
 #include <mod_mock_psu.h>
-#include <config_mock_psu.h>
+
+#include <fwk_element.h>
+#include <fwk_id.h>
+#include <fwk_module.h>
+
+#include <stdbool.h>
+#include <stddef.h>
 
 static const struct fwk_element element_table[] = {
     [CONFIG_MOCK_PSU_ELEMENT_IDX_CPU_GROUP_LITTLE] = {
@@ -21,7 +27,7 @@ static const struct fwk_element element_table[] = {
             .async_response_api_id = FWK_ID_NONE_INIT,
 
             .default_enabled = true,
-            .default_voltage = 100,
+            .default_voltage = 800,
         },
     },
     [CONFIG_MOCK_PSU_ELEMENT_IDX_CPU_GROUP_BIG] = {
@@ -34,7 +40,7 @@ static const struct fwk_element element_table[] = {
             .async_response_api_id = FWK_ID_NONE_INIT,
 
             .default_enabled = true,
-            .default_voltage = 100,
+            .default_voltage = 800,
         },
     },
     [CONFIG_MOCK_PSU_ELEMENT_IDX_GPU] = {
@@ -47,7 +53,7 @@ static const struct fwk_element element_table[] = {
             .async_response_api_id = FWK_ID_NONE_INIT,
 
             .default_enabled = true,
-            .default_voltage = 100,
+            .default_voltage = 800,
         },
     },
     [CONFIG_MOCK_PSU_ELEMENT_IDX_VPU] = {
@@ -60,7 +66,7 @@ static const struct fwk_element element_table[] = {
             .async_response_api_id = FWK_ID_NONE_INIT,
 
             .default_enabled = true,
-            .default_voltage = 100,
+            .default_voltage = 800,
         },
     },
     { 0 }

@@ -8,8 +8,15 @@
  *     SCMI Clock Management Protocol Support.
  */
 
-#include <string.h>
+#include <internal/scmi.h>
+#include <internal/scmi_clock.h>
+
+#include <mod_clock.h>
+#include <mod_scmi.h>
+#include <mod_scmi_clock.h>
+
 #include <fwk_assert.h>
+#include <fwk_event.h>
 #include <fwk_id.h>
 #include <fwk_macros.h>
 #include <fwk_mm.h>
@@ -17,10 +24,9 @@
 #include <fwk_module_idx.h>
 #include <fwk_status.h>
 #include <fwk_thread.h>
-#include <internal/scmi.h>
-#include <internal/scmi_clock.h>
-#include <mod_scmi.h>
-#include <mod_scmi_clock.h>
+
+#include <stdbool.h>
+#include <string.h>
 
 struct clock_operations {
     /*
@@ -983,8 +989,6 @@ static int scmi_clock_init(fwk_id_t module_id, unsigned int element_count,
     scmi_clock_ctx.clock_ops =
         fwk_mm_calloc((unsigned int)clock_devices,
         sizeof(struct clock_operations));
-    if (scmi_clock_ctx.clock_ops == NULL)
-        return FWK_E_NOMEM;
 
     /* Initialize table */
     for (unsigned int i = 0; i < (unsigned int)clock_devices; i++)

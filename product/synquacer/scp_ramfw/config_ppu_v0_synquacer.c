@@ -5,19 +5,23 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
+#include "synquacer_core.h"
+#include "synquacer_mmap.h"
+
+#include <mod_power_domain.h>
+#include <mod_ppu_v0.h>
+
 #include <fwk_element.h>
+#include <fwk_id.h>
 #include <fwk_interrupt.h>
 #include <fwk_macros.h>
 #include <fwk_mm.h>
 #include <fwk_module.h>
-#include <mod_ppu_v0.h>
-#include <synquacer_core.h>
-#include <synquacer_irq.h>
-#include <synquacer_mmap.h>
-#include <config_ppu_v0.h>
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 #define PPU_V0_NAME_SIZE (12)
 
@@ -92,8 +96,6 @@ static const struct fwk_element *ppu_v0_get_element_table(fwk_id_t module_id)
 
     ppu_v0_config_table = fwk_mm_calloc(
         (cluster_count + core_count), sizeof(struct mod_ppu_v0_pd_config));
-    if (ppu_v0_config_table == NULL)
-        return NULL;
 
     element_count = 0;
 
@@ -104,8 +106,6 @@ static const struct fwk_element *ppu_v0_get_element_table(fwk_id_t module_id)
             ppu_v0_config = &ppu_v0_config_table[element_count];
 
             element->name = fwk_mm_alloc(PPU_V0_NAME_SIZE, 1);
-            if (element->name == NULL)
-                return NULL;
 
             snprintf(
                 (char *)element->name,
@@ -130,8 +130,6 @@ static const struct fwk_element *ppu_v0_get_element_table(fwk_id_t module_id)
 
         /* prepare cluster config table */
         element->name = fwk_mm_alloc(PPU_V0_NAME_SIZE, 1);
-        if (element->name == NULL)
-            return NULL;
 
         snprintf(
             (char *)element->name, PPU_V0_NAME_SIZE, "CLUS%u", cluster_idx);

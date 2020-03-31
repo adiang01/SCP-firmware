@@ -8,17 +8,20 @@
  *     System Power Support.
  */
 
-#include <stdint.h>
+#include <mod_power_domain.h>
+#include <mod_system_power.h>
+
 #include <fwk_assert.h>
 #include <fwk_id.h>
 #include <fwk_interrupt.h>
-#include <fwk_macros.h>
+#include <fwk_log.h>
 #include <fwk_mm.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
-#include <mod_log.h>
-#include <mod_system_power.h>
-#include <mod_power_domain.h>
+#include <fwk_status.h>
+
+#include <stdbool.h>
+#include <stdint.h>
 
 /* SoC wakeup composite state */
 #define MOD_SYSTEM_POWER_SOC_WAKEUP_STATE \
@@ -27,10 +30,6 @@
                            MOD_PD_STATE_ON, \
                            MOD_PD_STATE_ON, \
                            MOD_PD_STATE_ON)
-
-/* SoC wakeup Power Domain Identifier */
-static const fwk_id_t mod_system_power_soc_wakeup_pd_id =
-    FWK_ID_ELEMENT_INIT(FWK_MODULE_IDX_POWER_DOMAIN, 0);
 
 /* Element context */
 struct system_power_dev_ctx {
@@ -43,9 +42,6 @@ struct system_power_dev_ctx {
 
 /* Module context */
 struct system_power_ctx {
-    /* Log API pointer */
-    const struct mod_log_api *log_api;
-
     /* System power element context table */
     struct system_power_dev_ctx *dev_ctx_table;
 
@@ -75,6 +71,12 @@ struct system_power_ctx {
 
     /* Pointer to module config */
     const struct mod_system_power_config *config;
+
+    /*
+     * Identifier of the power domain of the last standing core before system
+     * suspend.
+     */
+    fwk_id_t last_core_pd_id;
 };
 
 static struct system_power_ctx system_power_ctx;
@@ -163,11 +165,9 @@ static int shutdown_system_power_ppus(
     return FWK_SUCCESS;
 }
 
-static int shutdown(
-    fwk_id_t pd_id,
-    enum mod_pd_system_shutdown system_shutdown)
+static int disable_all_irqs(void)
 {
-    int status;
+    int status = FWK_SUCCESS;
 
     fwk_interrupt_disable(system_power_ctx.config->soc_wakeup_irq);
 
@@ -175,14 +175,33 @@ static int shutdown(
         status = system_power_ctx.driver_api->platform_interrupts(
             MOD_SYSTEM_POWER_PLATFORM_INTERRUPT_CMD_DISABLE);
         if (status != FWK_SUCCESS)
-            return FWK_E_DEVICE;
+            status = FWK_E_DEVICE;
     }
+
+    return status;
+}
+
+static int shutdown(
+    fwk_id_t pd_id,
+    enum mod_pd_system_shutdown system_shutdown)
+{
+    int status;
+
+    status = disable_all_irqs();
+    if (status != FWK_SUCCESS)
+        return status;
 
     /* Shutdown external PPUs */
     ext_ppus_shutdown(system_shutdown);
 
+    system_power_ctx.requested_state = MOD_PD_STATE_OFF;
+
     /* Shutdown system PPUs */
-    return shutdown_system_power_ppus(system_shutdown);
+    status = shutdown_system_power_ppus(system_shutdown);
+    if (status != FWK_SUCCESS)
+        return status;
+
+    return FWK_SUCCESS;
 }
 
 /*
@@ -203,14 +222,9 @@ static int system_power_set_state(fwk_id_t pd_id, unsigned int state)
 
     switch (state) {
     case MOD_PD_STATE_ON:
-        fwk_interrupt_disable(soc_wakeup_irq);
-
-        if (system_power_ctx.driver_api->platform_interrupts != NULL) {
-            status = system_power_ctx.driver_api->platform_interrupts(
-                MOD_SYSTEM_POWER_PLATFORM_INTERRUPT_CMD_DISABLE);
-            if (status != FWK_SUCCESS)
-                return FWK_E_DEVICE;
-        }
+        status = disable_all_irqs();
+        if (status != FWK_SUCCESS)
+            return status;
 
         status = set_system_power_state(state);
         if (status != FWK_SUCCESS)
@@ -237,6 +251,12 @@ static int system_power_set_state(fwk_id_t pd_id, unsigned int state)
         if (status != FWK_SUCCESS)
             return status;
 
+        /* Store the identifier of the power domain of the last standing core */
+        status = system_power_ctx.mod_pd_driver_input_api->
+            get_last_core_pd_id(&system_power_ctx.last_core_pd_id);
+        if (status != FWK_SUCCESS)
+            return status;
+
         fwk_interrupt_enable(soc_wakeup_irq);
 
         if (system_power_ctx.driver_api->platform_interrupts != NULL) {
@@ -249,14 +269,9 @@ static int system_power_set_state(fwk_id_t pd_id, unsigned int state)
         break;
 
     case MOD_PD_STATE_OFF:
-        fwk_interrupt_disable(soc_wakeup_irq);
-
-        if (system_power_ctx.driver_api->platform_interrupts != NULL) {
-            status = system_power_ctx.driver_api->platform_interrupts(
-                MOD_SYSTEM_POWER_PLATFORM_INTERRUPT_CMD_DISABLE);
-            if (status != FWK_SUCCESS)
-                return FWK_E_DEVICE;
-        }
+        status = disable_all_irqs();
+        if (status != FWK_SUCCESS)
+            return status;
 
         ext_ppus_set_state(MOD_PD_STATE_OFF);
 
@@ -302,9 +317,13 @@ static void soc_wakeup_handler(void)
     int status;
     uint32_t state = MOD_SYSTEM_POWER_SOC_WAKEUP_STATE;
 
+    status = disable_all_irqs();
+    if (status != FWK_SUCCESS)
+        fwk_trap();
+
     status =
         system_power_ctx.mod_pd_restricted_api->set_composite_state_async(
-            mod_system_power_soc_wakeup_pd_id, false, state);
+            system_power_ctx.last_core_pd_id, false, state);
     fwk_expect(status == FWK_SUCCESS);
 }
 
@@ -362,15 +381,11 @@ static int system_power_mod_init(fwk_id_t module_id,
 
     system_power_ctx.dev_ctx_table =
         fwk_mm_calloc(element_count, sizeof(struct system_power_dev_ctx));
-    if (system_power_ctx.dev_ctx_table == NULL)
-        return FWK_E_NOMEM;
 
     if (system_power_ctx.config->ext_ppus_count > 0) {
         system_power_ctx.ext_ppu_apis = fwk_mm_calloc(
             system_power_ctx.config->ext_ppus_count,
             sizeof(system_power_ctx.ext_ppu_apis[0]));
-        if (system_power_ctx.ext_ppu_apis == NULL)
-            return FWK_E_NOMEM;
     }
 
     if (system_power_ctx.config->soc_wakeup_irq != FWK_INTERRUPT_NONE) {
@@ -425,10 +440,6 @@ static int system_power_bind(fwk_id_t id, unsigned int round)
     }
 
     if (fwk_id_is_type(id, FWK_ID_TYPE_MODULE)) {
-        status = fwk_module_bind(FWK_ID_MODULE(FWK_MODULE_IDX_LOG),
-            FWK_ID_API(FWK_MODULE_IDX_LOG, 0), &system_power_ctx.log_api);
-        if (status != FWK_SUCCESS)
-            return status;
 
         config = system_power_ctx.config;
 

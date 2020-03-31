@@ -5,28 +5,37 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <stdbool.h>
-#include <string.h>
+#include <cmn600.h>
+
+#include <internal/cmn600_ccix.h>
+#include <internal/cmn600_ctx.h>
+
+#include <mod_clock.h>
+#include <mod_cmn600.h>
+#include <mod_ppu_v1.h>
+#include <mod_system_info.h>
+#include <mod_timer.h>
+
 #include <fwk_assert.h>
-#include <fwk_macros.h>
-#include <fwk_math.h>
+#include <fwk_event.h>
+#include <fwk_id.h>
+#include <fwk_log.h>
 #include <fwk_mm.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
 #include <fwk_notification.h>
 #include <fwk_status.h>
-#include <mod_clock.h>
-#include <mod_cmn600.h>
-#include <mod_log.h>
-#include <mod_power_domain.h>
-#include <cmn600.h>
-#include <internal/cmn600_ccix.h>
-#include <internal/cmn600_ctx.h>
-#include <mod_ppu_v1.h>
+
+#include <inttypes.h>
+#include <stdbool.h>
+#include <string.h>
 
 #define MOD_NAME "[CMN600] "
 
 struct cmn600_ctx *ctx;
+
+/* Chip information API */
+struct mod_system_info_get_info_api *system_info_api;
 
 static void process_node_hnf(struct cmn600_hnf_reg *hnf)
 {
@@ -134,7 +143,7 @@ static int cmn600_discovery(void)
     struct node_header *node;
     const struct mod_cmn600_config *config = ctx->config;
 
-    ctx->log_api->log(MOD_LOG_GROUP_DEBUG, MOD_NAME "Starting discovery...\n");
+    FWK_LOG_INFO(MOD_NAME "Starting discovery...");
 
     assert(get_node_type(ctx->root) == NODE_TYPE_CFG);
 
@@ -145,9 +154,10 @@ static int cmn600_discovery(void)
         xp = get_child_node(config->base, ctx->root, xp_idx);
         assert(get_node_type(xp) == NODE_TYPE_XP);
 
-        ctx->log_api->log(MOD_LOG_GROUP_DEBUG, MOD_NAME "\n");
-        ctx->log_api->log(MOD_LOG_GROUP_DEBUG,
-            MOD_NAME "XP (%d, %d) ID:%d, LID:%d\n",
+        FWK_LOG_INFO(MOD_NAME);
+
+        FWK_LOG_INFO(
+            MOD_NAME "XP (%d, %d) ID:%d, LID:%d",
             get_node_pos_x(xp),
             get_node_pos_y(xp),
             get_node_id(xp),
@@ -172,22 +182,23 @@ static int cmn600_discovery(void)
                     (get_device_type(xp, xp_port) == DEVICE_TYPE_CXHA) ||
                     (get_device_type(xp, xp_port) == DEVICE_TYPE_CXRA)) {
                     ctx->cxla_reg = (void *)node;
-                    ctx->log_api->log(MOD_LOG_GROUP_DEBUG,
-                        MOD_NAME "  Found CXLA at node ID: %d\n",
+                    FWK_LOG_INFO(
+                        MOD_NAME "  Found CXLA at node ID: %d",
                         get_child_node_id(xp, node_idx));
                 } else { /* External RN-SAM Node */
                     ctx->external_rnsam_count++;
-                    ctx->log_api->log(MOD_LOG_GROUP_DEBUG,
-                        MOD_NAME "  Found external node ID: %d\n",
+                    FWK_LOG_INFO(
+                        MOD_NAME "  Found external node ID: %d",
                         get_child_node_id(xp, node_idx));
                 }
             } else { /* Internal nodes */
                 switch (get_node_type(node)) {
                 case NODE_TYPE_HN_F:
                     if (ctx->hnf_count >= MAX_HNF_COUNT) {
-                        ctx->log_api->log(MOD_LOG_GROUP_DEBUG,
-                                MOD_NAME "  hnf count %d >= max limit (%d)\n",
-                                ctx->hnf_count, MAX_HNF_COUNT);
+                        FWK_LOG_INFO(
+                            MOD_NAME "  hnf count %d >= max limit (%d)",
+                            ctx->hnf_count,
+                            MAX_HNF_COUNT);
                         return FWK_E_DATA;
                     }
                     ctx->hnf_offset[ctx->hnf_count++] = (uint32_t)node;
@@ -199,9 +210,10 @@ static int cmn600_discovery(void)
 
                 case NODE_TYPE_RN_D:
                     if (ctx->rnd_count >= MAX_RND_COUNT) {
-                        ctx->log_api->log(MOD_LOG_GROUP_DEBUG,
-                                MOD_NAME "  rnd count %d >= max limit (%d)\n",
-                                ctx->rnd_count, MAX_RND_COUNT);
+                        FWK_LOG_INFO(
+                            MOD_NAME "  rnd count %d >= max limit (%d)",
+                            ctx->rnd_count,
+                            MAX_RND_COUNT);
                         return FWK_E_DATA;
                     }
                     ctx->rnd_ldid[ctx->rnd_count++] = get_node_logical_id(node);
@@ -209,9 +221,10 @@ static int cmn600_discovery(void)
 
                 case NODE_TYPE_RN_I:
                     if (ctx->rni_count >= MAX_RNI_COUNT) {
-                        ctx->log_api->log(MOD_LOG_GROUP_DEBUG,
-                                MOD_NAME "  rni count %d >= max limit (%d)\n",
-                                ctx->rni_count, MAX_RNI_COUNT);
+                        FWK_LOG_INFO(
+                            MOD_NAME "  rni count %d >= max limit (%d)",
+                            ctx->rni_count,
+                            MAX_RNI_COUNT);
                         return FWK_E_DATA;
                     }
                     ctx->rni_ldid[ctx->rni_count++] = get_node_logical_id(node);
@@ -231,8 +244,8 @@ static int cmn600_discovery(void)
                     break;
                 }
 
-                ctx->log_api->log(MOD_LOG_GROUP_DEBUG,
-                    MOD_NAME "  %s ID:%d, LID:%d\n",
+                FWK_LOG_INFO(
+                    MOD_NAME "  %s ID:%d, LID:%d",
                     get_node_type_name(get_node_type(node)),
                     get_node_id(node),
                     get_node_logical_id(node));
@@ -246,51 +259,43 @@ static int cmn600_discovery(void)
      * RN-SAM count minus the total RN-D, RN-I and CXHA count combined.
      */
     ctx->rnf_count = ctx->internal_rnsam_count + ctx->external_rnsam_count -
-        (ctx->rnd_count + ctx->rni_count + ctx->ccix_host_info.host_ha_count++);
+        (ctx->rnd_count + ctx->rni_count + ctx->ccix_host_info.host_ha_count);
 
     if (ctx->rnf_count > MAX_RNF_COUNT) {
-        ctx->log_api->log(MOD_LOG_GROUP_ERROR,
-                MOD_NAME "rnf count %d > max limit (%d)\n",
-                ctx->rnf_count, MAX_RNF_COUNT);
+        FWK_LOG_ERR(
+            MOD_NAME "rnf count %d > max limit (%d)",
+            ctx->rnf_count,
+            MAX_RNF_COUNT);
         return FWK_E_RANGE;
     }
 
     /* When CAL is present, the number of HN-Fs must be even. */
     if ((ctx->hnf_count % 2 != 0) && (config->hnf_cal_mode == true)) {
-        ctx->log_api->log(MOD_LOG_GROUP_ERROR,
-                MOD_NAME "hnf count: %d should be even when CAL mode is set\n",
-                ctx->hnf_count);
+        FWK_LOG_ERR(
+            MOD_NAME "hnf count: %d should be even when CAL mode is set",
+            ctx->hnf_count);
         return FWK_E_DATA;
     }
 
-    ctx->log_api->log(MOD_LOG_GROUP_DEBUG,
-        MOD_NAME "Total internal RN-SAM nodes: %d\n"
-        MOD_NAME "Total external RN-SAM nodes: %d\n"
-        MOD_NAME "Total HN-F nodes: %d\n"
-        MOD_NAME "Total RN-D nodes: %d\n"
-        MOD_NAME "Total RN-F nodes: %d\n",
-        MOD_NAME "Total RN-I nodes: %d\n",
-        ctx->internal_rnsam_count,
-        ctx->external_rnsam_count,
-        ctx->hnf_count,
-        ctx->rnd_count,
-        ctx->rnf_count,
-        ctx->rni_count);
+    FWK_LOG_INFO(
+        MOD_NAME "Total internal RN-SAM nodes: %d", ctx->internal_rnsam_count);
+    FWK_LOG_INFO(
+        MOD_NAME "Total external RN-SAM nodes: %d", ctx->external_rnsam_count);
+    FWK_LOG_INFO(MOD_NAME "Total HN-F nodes: %d", ctx->hnf_count);
+    FWK_LOG_INFO(MOD_NAME "Total RN-F nodes: %d", ctx->rnd_count);
+    FWK_LOG_INFO(MOD_NAME "Total RN-D nodes: %d", ctx->rnf_count);
+    FWK_LOG_INFO(MOD_NAME "Total RN-I nodes: %d", ctx->rni_count);
 
     if (ctx->cxla_reg) {
-        ctx->log_api->log(MOD_LOG_GROUP_DEBUG,
-            MOD_NAME "CCIX CXLA node at: 0x%08x\n",
-            (uint32_t)ctx->cxla_reg);
+        FWK_LOG_INFO(MOD_NAME "CCIX CXLA node at: 0x%p", (void *)ctx->cxla_reg);
     }
     if (ctx->cxg_ra_reg) {
-        ctx->log_api->log(MOD_LOG_GROUP_DEBUG,
-            MOD_NAME "CCIX CXRA node at: 0x%08x\n",
-            (uint32_t)ctx->cxg_ra_reg);
+        FWK_LOG_INFO(
+            MOD_NAME "CCIX CXRA node at: 0x%p", (void *)ctx->cxg_ra_reg);
     }
     if (ctx->cxg_ha_reg) {
-        ctx->log_api->log(MOD_LOG_GROUP_DEBUG,
-            MOD_NAME "CCIX CXHA node at: 0x%08x\n",
-            (uint32_t)ctx->cxg_ha_reg);
+        FWK_LOG_INFO(
+            MOD_NAME "CCIX CXHA node at: 0x%p", (void *)ctx->cxg_ha_reg);
     }
     return FWK_SUCCESS;
 }
@@ -379,9 +384,7 @@ int cmn600_setup_sam(struct cmn600_rnsam_reg *rnsam)
     unsigned int scg_region = 0;
     unsigned int scg_regions_enabled[CMN600_MAX_NUM_SCG] = {0, 0, 0, 0};
 
-    ctx->log_api->log(MOD_LOG_GROUP_DEBUG,
-        MOD_NAME "Configuring SAM for node %d\n",
-        get_node_id(rnsam));
+    FWK_LOG_INFO(MOD_NAME "Configuring SAM for node %d", get_node_id(rnsam));
 
     for (region_idx = 0; region_idx < config->mmap_count; region_idx++) {
         region = &config->mmap_table[region_idx];
@@ -398,11 +401,11 @@ int cmn600_setup_sam(struct cmn600_rnsam_reg *rnsam)
         } else
             base = region->base;
 
-        ctx->log_api->log(MOD_LOG_GROUP_DEBUG,
-                          MOD_NAME "  [0x%lx - 0x%lx] %s\n",
-                          base,
-                          base + region->size - 1,
-                          mmap_type_name[region->type]);
+        FWK_LOG_INFO(
+            MOD_NAME "  [0x%" PRIX64 " - 0x%" PRIX64 "] %s",
+            base,
+            base + region->size - 1,
+            mmap_type_name[region->type]);
 
         switch (region->type) {
         case MOD_CMN600_MEMORY_REGION_TYPE_IO:
@@ -412,7 +415,8 @@ int cmn600_setup_sam(struct cmn600_rnsam_reg *rnsam)
              */
             if (region_io_count >
                     CMN600_RNSAM_MAX_NON_HASH_MEM_REGION_ENTRIES) {
-                ctx->log_api->log(MOD_LOG_GROUP_ERROR, MOD_NAME
+                FWK_LOG_ERR(
+                    MOD_NAME
                     "Non-Hashed Memory can have maximum of %d regions only",
                     CMN600_RNSAM_MAX_NON_HASH_MEM_REGION_ENTRIES);
                 return FWK_E_DATA;
@@ -453,7 +457,8 @@ int cmn600_setup_sam(struct cmn600_rnsam_reg *rnsam)
              * Configure memory region
              */
             if (region_sys_count >= CMN600_RNSAM_MAX_HASH_MEM_REGION_ENTRIES) {
-                ctx->log_api->log(MOD_LOG_GROUP_ERROR, MOD_NAME
+                FWK_LOG_ERR(
+                    MOD_NAME
                     "Hashed Memory can have maximum of %d regions only",
                     CMN600_RNSAM_MAX_HASH_MEM_REGION_ENTRIES);
                 return FWK_E_DATA;
@@ -552,16 +557,12 @@ static int cmn600_setup(void)
         if (ctx->internal_rnsam_count != 0) {
             ctx->internal_rnsam_table = fwk_mm_calloc(
                 ctx->internal_rnsam_count, sizeof(*ctx->internal_rnsam_table));
-            if (ctx->internal_rnsam_table == NULL)
-                return FWK_E_NOMEM;
         }
 
         /* Tuples for the external RN-RAM nodes (including their node IDs) */
         if (ctx->external_rnsam_count != 0) {
             ctx->external_rnsam_table = fwk_mm_calloc(
                 ctx->external_rnsam_count, sizeof(*ctx->external_rnsam_table));
-            if (ctx->external_rnsam_table == NULL)
-                return FWK_E_NOMEM;
         }
 
         /* Cache groups */
@@ -573,8 +574,6 @@ static int cmn600_setup(void)
             ctx->hnf_cache_group = fwk_mm_calloc(
                 ctx->hnf_count / CMN600_HNF_CACHE_GROUP_ENTRIES_PER_GROUP,
                 sizeof(*ctx->hnf_cache_group));
-            if (ctx->hnf_cache_group == NULL)
-                return FWK_E_NOMEM;
         }
     }
 
@@ -599,7 +598,7 @@ static int cmn600_setup(void)
         }
     }
 
-    ctx->log_api->log(MOD_LOG_GROUP_DEBUG, MOD_NAME "Done\n");
+    FWK_LOG_INFO(MOD_NAME "Done");
 
     ctx->initialized = true;
 
@@ -713,8 +712,6 @@ static int cmn600_init(fwk_id_t module_id, unsigned int element_count,
 
     /* Allocate space for the context */
     ctx = fwk_mm_calloc(1, sizeof(*ctx));
-    if (ctx == NULL)
-        return FWK_E_NOMEM;
 
     if (config->base == 0)
         return FWK_E_DATA;
@@ -743,14 +740,6 @@ static int cmn600_bind(fwk_id_t id, unsigned int round)
     /* Use second round only (round numbering is zero-indexed) */
     if (round == 1) {
 
-        /* Bind to the log component */
-        status = fwk_module_bind(FWK_ID_MODULE(FWK_MODULE_IDX_LOG),
-                                 FWK_ID_API(FWK_MODULE_IDX_LOG, 0),
-                                 &ctx->log_api);
-
-        if (status != FWK_SUCCESS)
-            return FWK_E_PANIC;
-
         /* Bind to the timer component */
         status = fwk_module_bind(FWK_ID_ELEMENT(FWK_MODULE_IDX_TIMER, 0),
                                  FWK_ID_API(FWK_MODULE_IDX_TIMER,
@@ -759,14 +748,13 @@ static int cmn600_bind(fwk_id_t id, unsigned int round)
         if (status != FWK_SUCCESS)
             return FWK_E_PANIC;
 
-        /* Bind to the chip information API in platform if provided */
-        if (!fwk_id_is_equal(ctx->config->chipinfo_mod_id, FWK_ID_NONE)) {
-            status = fwk_module_bind(ctx->config->chipinfo_mod_id,
-                                     ctx->config->chipinfo_api_id,
-                                     &ctx->chipinfo_api);
-            if (status != FWK_SUCCESS)
-                return FWK_E_PANIC;
-        }
+        /* Bind to system info module to obtain multi-chip info */
+        status = fwk_module_bind(FWK_ID_MODULE(FWK_MODULE_IDX_SYSTEM_INFO),
+                                 FWK_ID_API(FWK_MODULE_IDX_SYSTEM_INFO,
+                                            MOD_SYSTEM_INFO_GET_API_IDX),
+                                 &system_info_api);
+        if (status != FWK_SUCCESS)
+            return FWK_E_PANIC;
     }
 
     return FWK_SUCCESS;
@@ -799,15 +787,16 @@ int cmn600_start(fwk_id_t id)
         return FWK_SUCCESS;
     }
 
-    if (!fwk_id_is_equal(ctx->config->chipinfo_mod_id, FWK_ID_NONE)) {
-        status = ctx->chipinfo_api->get_chipinfo(&chip_id, &mc_mode);
-        if (status != FWK_SUCCESS)
-            return status;
+    status = system_info_api->get_system_info(&ctx->system_info);
+    if (status == FWK_SUCCESS) {
+        chip_id = ctx->system_info->chip_id;
+        mc_mode = ctx->system_info->multi_chip_mode;
     }
+
     ctx->chip_id = chip_id;
 
-    ctx->log_api->log(MOD_LOG_GROUP_DEBUG,
-        MOD_NAME "Multichip mode: %d Chip ID: %d\n", mc_mode, chip_id);
+    FWK_LOG_INFO(MOD_NAME "Multichip mode: %s", mc_mode ? "yes" : "no");
+    FWK_LOG_INFO(MOD_NAME "Chip ID: %d", chip_id);
 
     /* Register the module for clock state notifications */
     return fwk_notification_subscribe(

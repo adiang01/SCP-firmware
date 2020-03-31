@@ -30,6 +30,8 @@ BS_FIRMWARE_MODULES := \
     juno_ppu \
     juno_system \
     system_power \
+    juno_debug \
+    debug \
     power_domain \
     mhu \
     smt \
@@ -47,7 +49,9 @@ BS_FIRMWARE_MODULES := \
     juno_xrp7724 \
     reg_sensor \
     psu \
-    mock_psu
+    mock_psu \
+    juno_pvt \
+    juno_thermal
 
 BS_FIRMWARE_SOURCES := \
     rtx_config.c \
@@ -66,6 +70,8 @@ BS_FIRMWARE_SOURCES := \
     config_juno_ram.c \
     config_juno_ppu.c \
     config_system_power.c \
+    config_juno_debug.c \
+    config_debug.c \
     config_power_domain.c \
     config_mhu.c \
     config_smt.c \
@@ -79,6 +85,9 @@ BS_FIRMWARE_SOURCES := \
     config_sensor.c \
     config_reg_sensor.c \
     config_psu.c \
-    config_mock_psu.c
+    config_mock_psu.c \
+    config_juno_pvt.c \
+    config_juno_thermal.c \
+    config_scmi_power_domain.c
 
 include $(BS_DIR)/firmware.mk

@@ -11,8 +11,12 @@
 #ifndef MOD_JUNO_ADC_H
 #define MOD_JUNO_ADC_H
 
-#include <stdint.h>
 #include <mod_sensor.h>
+
+#include <fwk_id.h>
+#include <fwk_module_idx.h>
+
+#include <stdint.h>
 
 /*!
  * \ingroup GroupJunoModule
@@ -24,10 +28,10 @@
  * \brief ADC Type indices.
  */
 enum juno_adc_sensor_type {
-    /*! Current type ADC */
-    ADC_TYPE_CURRENT = 0,
     /*! Voltage type ADC */
-    ADC_TYPE_VOLT,
+    ADC_TYPE_VOLT = 0,
+    /*! Current type ADC */
+    ADC_TYPE_CURRENT,
     /*! Power type ADC */
     ADC_TYPE_POWER,
     /*! Energy type ADC */

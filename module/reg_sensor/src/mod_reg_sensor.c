@@ -5,14 +5,17 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <stdint.h>
+#include <mod_reg_sensor.h>
+#include <mod_sensor.h>
+
 #include <fwk_assert.h>
 #include <fwk_id.h>
 #include <fwk_mm.h>
 #include <fwk_module.h>
 #include <fwk_status.h>
-#include <mod_reg_sensor.h>
-#include <mod_sensor.h>
+
+#include <stddef.h>
+#include <stdint.h>
 
 static struct mod_reg_sensor_dev_config **config_table;
 
@@ -63,9 +66,6 @@ static int reg_sensor_init(fwk_id_t module_id,
                            const void *unused)
 {
     config_table = fwk_mm_alloc(element_count, sizeof(*config_table));
-
-    if (config_table == NULL)
-        return FWK_E_NOMEM;
 
     return FWK_SUCCESS;
 }

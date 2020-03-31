@@ -8,11 +8,14 @@
 #ifndef MOD_JUNO_CDCEL937_H
 #define MOD_JUNO_CDCEL937_H
 
-#include <stdint.h>
+#include "juno_clock.h"
+
+#include <mod_clock.h>
+
 #include <fwk_id.h>
 #include <fwk_module_idx.h>
-#include <mod_clock.h>
-#include <juno_clock.h>
+
+#include <stdint.h>
 
 /*!
  * \addtogroup GroupModules Modules
@@ -24,6 +27,9 @@
  *
  * @{
  */
+
+/*! Define whether the output Y1 is used */
+#define USE_OUTPUT_Y1   0
 
 /*! Output type */
 enum mod_juno_cdcel937_output_id {

@@ -5,17 +5,23 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include "config_dvfs.h"
+#include "config_psu.h"
+#include "juno_alarm_idx.h"
+#include "juno_clock.h"
+#include "juno_id.h"
+
+#include <mod_dvfs.h>
+
 #include <fwk_assert.h>
 #include <fwk_element.h>
+#include <fwk_id.h>
 #include <fwk_macros.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
-#include <config_dvfs.h>
-#include <config_psu.h>
-#include <juno_alarm_idx.h>
-#include <juno_clock.h>
-#include <juno_id.h>
-#include <mod_dvfs.h>
+#include <fwk_status.h>
+
+#include <stddef.h>
 
 /*
  * The power cost figures from this file are built using the dynamic power
@@ -314,7 +320,7 @@ static const struct mod_dvfs_domain_config gpu_r2 = {
             .power = (4.6875 * 450 * 0.820 * 0.820),
         },
         {
-            .frequency = 487500 * FWK_KHZ,
+            .frequency = 600 * FWK_MHZ,
             .voltage = 900,
             .power = (4.6875 * 600 * 0.900 * 0.900),
         },
@@ -340,11 +346,11 @@ static const struct fwk_element element_table_r0[] = {
 
 static const struct fwk_element element_table_r1[] = {
     [DVFS_ELEMENT_IDX_LITTLE] = {
-        .name = "CPU_LITTLE",
+        .name = "LITTLE_CPU",
         .data = &cpu_group_little_r1,
     },
     [DVFS_ELEMENT_IDX_BIG] = {
-        .name = "CPU_BIG",
+        .name = "BIG_CPU",
         .data = &cpu_group_big_r1,
     },
     [DVFS_ELEMENT_IDX_GPU] = {
@@ -356,11 +362,11 @@ static const struct fwk_element element_table_r1[] = {
 
 static const struct fwk_element element_table_r2[] = {
     [DVFS_ELEMENT_IDX_LITTLE] = {
-        .name = "CPU_GROUP_LITTLE",
+        .name = "LITTLE_CPU",
         .data = &cpu_group_little_r2,
     },
     [DVFS_ELEMENT_IDX_BIG] = {
-        .name = "CPU_GROUP_BIG",
+        .name = "BIG_CPU",
         .data = &cpu_group_big_r2,
     },
     [DVFS_ELEMENT_IDX_GPU] = {

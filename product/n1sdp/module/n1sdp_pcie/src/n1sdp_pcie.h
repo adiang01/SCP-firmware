@@ -8,10 +8,14 @@
 #ifndef N1SDP_PCIE_H
 #define N1SDP_PCIE_H
 
-#include <stdint.h>
-#include <fwk_macros.h>
-#include <mod_timer.h>
 #include <internal/pcie_ctrl_apb_reg.h>
+
+#include <mod_timer.h>
+
+#include <fwk_macros.h>
+
+#include <stdbool.h>
+#include <stdint.h>
 
 /*
  * Definitions of PCIe APB register offsets from global configuration
@@ -118,7 +122,7 @@
  * This value is same as what Xilinx Hood FPGA expects.
  * To be revisited after consortium finalizes the value.
  */
-#define CCIX_VENDER_ID                 (0x2692)
+#define CCIX_VENDER_ID                 (0x1E2C)
 
 /* PCIe LM root complex bar configuration register bit masks */
 #define TYPE1_PREF_MEM_BAR_ENABLE_MASK      (1U << 17)

@@ -5,15 +5,17 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <fwk_element.h>
-#include <fwk_mm.h>
-#include <fwk_module.h>
-#include <fwk_status.h>
 #include <mod_clock.h>
 #include <mod_css_clock.h>
 #include <mod_power_domain.h>
+
+#include <fwk_id.h>
+#include <fwk_mm.h>
+#include <fwk_module.h>
+#include <fwk_status.h>
+
+#include <stdint.h>
+#include <stdlib.h>
 
 /* Device context */
 struct css_clock_dev_ctx {
@@ -338,9 +340,6 @@ static int css_clock_init(fwk_id_t module_id, unsigned int element_count,
 
     module_ctx.dev_ctx_table = fwk_mm_calloc(element_count,
                                              sizeof(struct css_clock_dev_ctx));
-    if (module_ctx.dev_ctx_table == NULL)
-        return FWK_E_NOMEM;
-
     return FWK_SUCCESS;
 }
 

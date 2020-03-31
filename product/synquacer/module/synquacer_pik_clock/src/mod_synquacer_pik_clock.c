@@ -5,18 +5,17 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <fwk_assert.h>
-#include <fwk_element.h>
-#include <fwk_mm.h>
-#include <fwk_module.h>
-#include <fwk_module_idx.h>
-#include <fwk_status.h>
 #include <mod_clock.h>
-#include <mod_css_clock.h>
 #include <mod_power_domain.h>
 #include <mod_synquacer_pik_clock.h>
+
+#include <fwk_id.h>
+#include <fwk_mm.h>
+#include <fwk_module.h>
+#include <fwk_status.h>
+
+#include <stdint.h>
+#include <stdlib.h>
 
 /*
  * Masks for single-source clock divider control.
@@ -649,8 +648,6 @@ static int pik_clock_init(
 
     module_ctx.dev_ctx_table =
         fwk_mm_calloc(element_count, sizeof(struct pik_clock_dev_ctx));
-    if (module_ctx.dev_ctx_table == NULL)
-        return FWK_E_NOMEM;
 
     return FWK_SUCCESS;
 }

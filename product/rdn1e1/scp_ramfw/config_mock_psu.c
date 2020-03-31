@@ -5,9 +5,13 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <fwk_element.h>
-#include <fwk_module.h>
 #include <mod_mock_psu.h>
+
+#include <fwk_element.h>
+#include <fwk_id.h>
+#include <fwk_module.h>
+
+#include <stdbool.h>
 
 static const struct fwk_element element_table[] = {
     {
@@ -21,7 +25,7 @@ static const struct fwk_element element_table[] = {
                 .async_response_api_id = FWK_ID_NONE_INIT,
 
                 .default_enabled = true,
-                .default_voltage = 100,
+                .default_voltage = 800,
             },
     },
     {
@@ -35,7 +39,7 @@ static const struct fwk_element element_table[] = {
                 .async_response_api_id = FWK_ID_NONE_INIT,
 
                 .default_enabled = true,
-                .default_voltage = 100,
+                .default_voltage = 800,
             },
     },
     { 0 }

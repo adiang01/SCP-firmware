@@ -5,21 +5,25 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
+#include "config_power_domain.h"
+#include "config_ppu_v0.h"
+#include "rdn1e1_core.h"
+#include "rdn1e1_power_domain.h"
+
+#include <mod_power_domain.h>
+#include <mod_ppu_v1.h>
+#include <mod_system_power.h>
+
 #include <fwk_element.h>
+#include <fwk_id.h>
 #include <fwk_macros.h>
 #include <fwk_mm.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
-#include <mod_system_power.h>
-#include <mod_power_domain.h>
-#include <mod_ppu_v1.h>
-#include <rdn1e1_power_domain.h>
-#include <rdn1e1_core.h>
-#include <config_ppu_v0.h>
-#include <config_power_domain.h>
+
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 /* Maximum power domain name size including the null terminator */
 #define PD_NAME_SIZE 12
@@ -153,13 +157,9 @@ static const struct fwk_element *rdn1e1_power_domain_get_element_table
         + FWK_ARRAY_SIZE(rdn1e1_power_domain_static_element_table)
         + 1, /* Terminator */
         sizeof(struct fwk_element));
-    if (element_table == NULL)
-        return NULL;
 
     pd_config_table = fwk_mm_calloc(core_count,
         sizeof(struct mod_power_domain_element_config));
-    if (pd_config_table == NULL)
-        return NULL;
 
     for (cluster_idx = 0; cluster_idx < cluster_count; cluster_idx++) {
         for (core_idx = 0;
@@ -170,8 +170,6 @@ static const struct fwk_element *rdn1e1_power_domain_get_element_table
             pd_config = &pd_config_table[core_element_count];
 
             element->name = fwk_mm_alloc(PD_NAME_SIZE, 1);
-            if (element->name == NULL)
-                return NULL;
 
             snprintf((char *)element->name, PD_NAME_SIZE, "CLUS%uCORE%u",
                 cluster_idx, core_idx);

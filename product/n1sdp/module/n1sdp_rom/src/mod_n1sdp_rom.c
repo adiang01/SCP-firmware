@@ -5,16 +5,20 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <stdint.h>
-#include <string.h>
+#include <mod_n1sdp_flash.h>
+#include <mod_n1sdp_rom.h>
+
+#include <fwk_event.h>
+#include <fwk_id.h>
 #include <fwk_interrupt.h>
+#include <fwk_log.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
 #include <fwk_status.h>
 #include <fwk_thread.h>
-#include <mod_n1sdp_flash.h>
-#include <mod_n1sdp_rom.h>
-#include <mod_log.h>
+
+#include <stdint.h>
+#include <string.h>
 
 /*
  * Module context
@@ -22,9 +26,6 @@
 struct mod_n1sdp_rom_ctx {
     /* ROM configuration structure */
     const struct n1sdp_rom_config *rom_config;
-
-    /* Pointer to log API */
-    struct mod_log_api *log_api;
 
     /* Pointer to n1sdp_flash API */
     struct mod_n1sdp_flash_api *flash_api;
@@ -78,14 +79,6 @@ static int n1sdp_rom_bind(fwk_id_t id, unsigned int round)
 
     /* Use second round only (round numbering is zero-indexed) */
     if (round == 1) {
-        /* Bind to the log component */
-        status = fwk_module_bind(FWK_ID_MODULE(FWK_MODULE_IDX_LOG),
-                                 FWK_ID_API(FWK_MODULE_IDX_LOG, 0),
-                                 &n1sdp_rom_ctx.log_api);
-
-        if (status != FWK_SUCCESS)
-            return FWK_E_PANIC;
-
         /* Bind to the n1sdp_flash component */
         status = fwk_module_bind(FWK_ID_MODULE(FWK_MODULE_IDX_N1SDP_FLASH),
                                  FWK_ID_API(FWK_MODULE_IDX_N1SDP_FLASH, 0),
@@ -137,23 +130,21 @@ static int n1sdp_rom_process_event(const struct fwk_event *event,
             return FWK_E_DATA;
 
         if (fip_desc->type == MOD_N1SDP_FIP_TYPE_MCP_BL2) {
-            n1sdp_rom_ctx.log_api->log(MOD_LOG_GROUP_INFO,
+            FWK_LOG_INFO(
                 "[ROM] Found MCP RAM Firmware at address: 0x%x,"
-                " size: %d bytes, flags: 0x%x\n",
+                " size: %d bytes, flags: 0x%x",
                 fip_desc->address,
                 fip_desc->size,
                 fip_desc->flags);
-                n1sdp_rom_ctx.log_api->log(MOD_LOG_GROUP_INFO,
-                "[ROM] Copying MCP RAM Firmware to ITCRAM...!\n");
+            FWK_LOG_INFO("[ROM] Copying MCP RAM Firmware to ITCRAM...!");
         } else {
-            n1sdp_rom_ctx.log_api->log(MOD_LOG_GROUP_INFO,
+            FWK_LOG_INFO(
                 "[ROM] Found SCP BL2 RAM Firmware at address: 0x%x,"
-                " size: %d bytes, flags: 0x%x\n",
+                " size: %d bytes, flags: 0x%x",
                 fip_desc->address,
                 fip_desc->size,
                 fip_desc->flags);
-                n1sdp_rom_ctx.log_api->log(MOD_LOG_GROUP_INFO,
-                "[ROM] Copying SCP RAM Firmware to ITCRAM...!\n");
+            FWK_LOG_INFO("[ROM] Copying SCP RAM Firmware to ITCRAM...!");
         }
         break;
     }
@@ -163,10 +154,9 @@ static int n1sdp_rom_process_event(const struct fwk_event *event,
 
     memcpy((void *)n1sdp_rom_ctx.rom_config->ramfw_base,
         (uint8_t *)fip_desc->address, fip_desc->size);
-    n1sdp_rom_ctx.log_api->log(MOD_LOG_GROUP_INFO, "[ROM] Done!\n");
+    FWK_LOG_INFO("[ROM] Done!");
 
-    n1sdp_rom_ctx.log_api->log(MOD_LOG_GROUP_INFO,
-        "[ROM] Jumping to RAM Firmware\n");
+    FWK_LOG_INFO("[ROM] Jumping to RAM Firmware");
 
     jump_to_ramfw();
 

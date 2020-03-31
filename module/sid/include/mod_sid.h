@@ -8,10 +8,13 @@
 #ifndef MOD_SID_H
 #define MOD_SID_H
 
-#include <stdint.h>
+#include <mod_pcid.h>
+
 #include <fwk_id.h>
 #include <fwk_module_idx.h>
-#include <mod_pcid.h>
+
+#include <stdbool.h>
+#include <stdint.h>
 
 /*!
  * \addtogroup GroupModules Modules
@@ -55,8 +58,11 @@ struct mod_sid_info {
     /*! Part number of the SoC */
     unsigned int soc_part_number;
 
-    /*! ID for the node when there are multiple sockets */
-    unsigned int node_id;
+    /*! Multi-chip mode tie-off value - enabled or disabled */
+    bool multi_chip_mode;
+
+    /*! Node number indicating the chip id in multi socket system */
+    uint8_t node_number;
 
     /*! Configuration number of the subsystem */
     unsigned int config_number;
@@ -99,6 +105,14 @@ struct mod_sid_subsystem_config {
  * \retval FWK_E_INIT The system information is not initialized.
  */
 int mod_sid_get_system_info(const struct mod_sid_info **system_info);
+
+/*!
+ * \brief Module API indices.
+ */
+enum mod_sid_api_idx {
+    MOD_SID_SYSTEM_INFO_DRIVER_DATA_API_IDX,
+    MOD_SID_API_COUNT
+};
 
 /*!
  * @}

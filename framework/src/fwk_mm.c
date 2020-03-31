@@ -8,15 +8,16 @@
  *     Memory management.
  */
 
+#include <fwk_assert.h>
+#include <fwk_macros.h>
+#include <fwk_mm.h>
+#include <fwk_status.h>
+
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include <fwk_assert.h>
-#include <fwk_macros.h>
-#include <fwk_mm.h>
-#include <fwk_status.h>
 
 static bool initialized;
 static bool mm_locked;
@@ -93,8 +94,7 @@ void *fwk_mm_alloc_aligned(size_t num, size_t size, unsigned int alignment)
     return (void *)start;
 
 error:
-    fwk_expect(false);
-    return NULL;
+    fwk_trap();
 }
 
 void *fwk_mm_calloc(size_t num, size_t size)

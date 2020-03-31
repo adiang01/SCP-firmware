@@ -5,15 +5,16 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
 #include <fwk_assert.h>
 #include <fwk_macros.h>
 #include <fwk_mm.h>
 #include <fwk_status.h>
 #include <fwk_test.h>
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
 #define SIZE_MEM            (1024 * 1024)
 #define ALLOC_NUM           5
@@ -25,22 +26,18 @@
 #define MEM_PATTERN         0x0A
 #define ALIGN_MASK          (ALLOC_ALIGN - 1)
 
-static void test_fwk_mm_alloc_before_init(void);
 static void test_fwk_mm_init(void);
 static void test_fwk_mm_alloc(void);
 static void test_fwk_mm_alloc_aligned(void);
 static void test_fwk_mm_calloc(void);
 static void test_fwk_mm_calloc_aligned(void);
-static void test_fwk_mm_lock(void);
 
 static const struct fwk_test_case_desc test_case_table[] = {
-    FWK_TEST_CASE(test_fwk_mm_alloc_before_init),
     FWK_TEST_CASE(test_fwk_mm_init),
     FWK_TEST_CASE(test_fwk_mm_alloc),
     FWK_TEST_CASE(test_fwk_mm_alloc_aligned),
     FWK_TEST_CASE(test_fwk_mm_calloc),
-    FWK_TEST_CASE(test_fwk_mm_calloc_aligned),
-    FWK_TEST_CASE(test_fwk_mm_lock)
+    FWK_TEST_CASE(test_fwk_mm_calloc_aligned)
 };
 
 struct fwk_test_suite_desc test_suite = {
@@ -53,26 +50,6 @@ extern int fwk_mm_init(uintptr_t start, size_t size);
 extern void fwk_mm_lock(void);
 
 static int start[SIZE_MEM];
-
-static void test_fwk_mm_alloc_before_init(void)
-{
-    void *result;
-    size_t num = ALLOC_NUM;
-    size_t size = ALLOC_SIZE;
-    unsigned int alignment = ALLOC_ALIGN;
-
-    result = fwk_mm_alloc(num, size);
-    assert(result == NULL);
-
-    result = fwk_mm_alloc_aligned(num, size, alignment);
-    assert(result == NULL);
-
-    result = fwk_mm_calloc(num, size);
-    assert(result == NULL);
-
-    result = fwk_mm_calloc_aligned(num, size, alignment);
-    assert(result == NULL);
-}
 
 static void test_fwk_mm_init(void)
 {
@@ -96,21 +73,6 @@ static void test_fwk_mm_alloc(void)
 {
     int i;
     char *result;
-
-    /* Bad parameters */
-    result = fwk_mm_alloc(0, ALLOC_SIZE);
-    assert(result == NULL);
-
-    result = fwk_mm_alloc(ALLOC_NUM, 0);
-    assert(result == NULL);
-
-    /* Allocate a memory block larger than the memory */
-    result = fwk_mm_alloc(ALLOC_NUM, SIZE_MEM + 1);
-    assert(result == NULL);
-
-    /* Num and size overflowed when multiplied */
-    result = fwk_mm_alloc(SIZE_MAX, SIZE_MAX);
-    assert(result == NULL);
 
     /* Allocate a memory block with an odd size */
     result = fwk_mm_alloc(ALLOC_NUM, ALLOC_ODD_SIZE);
@@ -141,28 +103,6 @@ static void test_fwk_mm_alloc_aligned(void)
     int i;
     char *result;
 
-    /* Bad parameters */
-    result = fwk_mm_alloc_aligned(0, ALLOC_SIZE, ALLOC_ALIGN);
-    assert(result == NULL);
-
-    result = fwk_mm_alloc_aligned(ALLOC_NUM, 0, ALLOC_ALIGN);
-    assert(result == NULL);
-
-    result = fwk_mm_alloc_aligned(ALLOC_NUM, ALLOC_SIZE, 0);
-    assert(result == NULL);
-
-    /* Allocate with a non power of two alignment */
-    result = fwk_mm_alloc_aligned(ALLOC_NUM, ALLOC_SIZE, ALLOC_BAD_ALIGN);
-    assert(result == NULL);
-
-    /* Allocate a memory block larger than the memory */
-    result = fwk_mm_alloc_aligned(ALLOC_NUM, SIZE_MEM + 1, ALLOC_ALIGN);
-    assert(result == NULL);
-
-    /* Num and size overflowed when multiplied */
-    result = fwk_mm_alloc_aligned(SIZE_MAX, SIZE_MAX, ALLOC_ALIGN);
-    assert(result == NULL);
-
     /* Allocate a memory block with an odd size */
     result = fwk_mm_alloc_aligned(ALLOC_NUM, ALLOC_ODD_SIZE, ALLOC_ALIGN);
     assert(result != NULL);
@@ -191,21 +131,6 @@ static void test_fwk_mm_calloc(void)
 {
     int i;
     char *result;
-
-    /* Bad parameters */
-    result = fwk_mm_calloc(0, ALLOC_SIZE);
-    assert(result == NULL);
-
-    result = fwk_mm_calloc(ALLOC_NUM, 0);
-    assert(result == NULL);
-
-    /* Allocate a memory block larger than the memory */
-    result = fwk_mm_calloc(ALLOC_NUM, SIZE_MEM + 1);
-    assert(result == NULL);
-
-    /* Num and size overflowed when multiplied */
-    result = fwk_mm_calloc(SIZE_MAX, SIZE_MAX);
-    assert(result == NULL);
 
     /* Allocate a memory block with an odd size */
     result = fwk_mm_calloc(ALLOC_NUM, ALLOC_ODD_SIZE);
@@ -240,28 +165,6 @@ static void test_fwk_mm_calloc_aligned(void)
     int i;
     char *result;
 
-    /* Bad parameters */
-    result = fwk_mm_alloc_aligned(0, ALLOC_SIZE, ALLOC_ALIGN);
-    assert(result == NULL);
-
-    result = fwk_mm_alloc_aligned(ALLOC_NUM, 0, ALLOC_ALIGN);
-    assert(result == NULL);
-
-    result = fwk_mm_alloc_aligned(ALLOC_NUM, ALLOC_SIZE, 0);
-    assert(result == NULL);
-
-    /* Allocate with a non power of two alignment */
-    result = fwk_mm_alloc_aligned(ALLOC_NUM, ALLOC_SIZE, ALLOC_BAD_ALIGN);
-    assert(result == NULL);
-
-    /* Allocate a memory block larger than the memory */
-    result = fwk_mm_alloc_aligned(ALLOC_NUM, SIZE_MEM + 1, ALLOC_ALIGN);
-    assert(result == NULL);
-
-    /* Num and size overflowed when multiplied */
-    result = fwk_mm_alloc_aligned(SIZE_MAX, SIZE_MAX, ALLOC_ALIGN);
-    assert(result == NULL);
-
     /* Allocate a memory block with an odd size */
     result = fwk_mm_alloc_aligned(ALLOC_NUM, ALLOC_ODD_SIZE, ALLOC_ALIGN);
     assert(result != NULL);
@@ -289,43 +192,4 @@ static void test_fwk_mm_calloc_aligned(void)
     for (i = 0; i < ALLOC_TOTAL_SIZE; i++)
         assert(result[i] == MEM_PATTERN);
 
-}
-
-static void test_fwk_mm_lock(void)
-{
-    void *result;
-
-    /*
-     * Make sure that memory allocation works properly before the
-     * component is locked.
-     */
-    result = fwk_mm_alloc(ALLOC_NUM, ALLOC_SIZE);
-    assert(result != NULL);
-
-    result = fwk_mm_alloc_aligned(ALLOC_NUM, ALLOC_SIZE, ALLOC_ALIGN);
-    assert(result != NULL);
-
-    result = fwk_mm_calloc(ALLOC_NUM, ALLOC_SIZE);
-    assert(result != NULL);
-
-    result = fwk_mm_calloc_aligned(ALLOC_NUM, ALLOC_SIZE, ALLOC_ALIGN);
-    assert(result != NULL);
-
-    fwk_mm_lock();
-
-    /*
-     * After the component has been locked the allocation attempt that
-     * succeeded previously should now fail.
-     */
-    result = fwk_mm_alloc(ALLOC_NUM, ALLOC_SIZE);
-    assert(result == NULL);
-
-    result = fwk_mm_alloc_aligned(ALLOC_NUM, ALLOC_SIZE, ALLOC_ALIGN);
-    assert(result == NULL);
-
-    result = fwk_mm_calloc(ALLOC_NUM, ALLOC_SIZE);
-    assert(result == NULL);
-
-    result = fwk_mm_calloc_aligned(ALLOC_NUM, ALLOC_SIZE, ALLOC_ALIGN);
-    assert(result == NULL);
 }

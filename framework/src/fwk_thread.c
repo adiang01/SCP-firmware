@@ -9,28 +9,30 @@
  */
 
 #include <internal/fwk_module.h>
-#include <internal/fwk_notification.h>
 #include <internal/fwk_single_thread.h>
 #include <internal/fwk_thread.h>
 #include <internal/fwk_thread_delayed_resp.h>
 
 #include <fwk_assert.h>
-#include <fwk_element.h>
-#include <fwk_host.h>
+#include <fwk_event.h>
 #include <fwk_id.h>
 #include <fwk_interrupt.h>
+#include <fwk_list.h>
+#include <fwk_log.h>
 #include <fwk_mm.h>
+#include <fwk_module.h>
+#include <fwk_noreturn.h>
+#include <fwk_slist.h>
 #include <fwk_status.h>
+#include <fwk_thread.h>
 
 #include <stdbool.h>
 #include <string.h>
 
 static struct __fwk_thread_ctx ctx;
 
-#ifdef BUILD_HOST
-static const char err_msg_line[] = "[THR] Error %d in %s @%d\n";
-static const char err_msg_func[] = "[THR] Error %d in %s\n";
-#endif
+static const char err_msg_line[] = "[FWK] Error %d in %s @%d";
+static const char err_msg_func[] = "[FWK] Error %d in %s";
 
 /*
  * Static functions
@@ -58,7 +60,7 @@ static struct fwk_event *duplicate_event(struct fwk_event *event)
     fwk_interrupt_global_enable();
 
     if (allocated_event == NULL) {
-        FWK_HOST_PRINT(err_msg_func, FWK_E_NOMEM, __func__);
+        FWK_LOG_CRIT(err_msg_func, FWK_E_NOMEM, __func__);
         fwk_assert(false);
     }
 
@@ -77,7 +79,7 @@ static int put_event(struct fwk_event *event)
         allocated_event = __fwk_thread_search_delayed_response(
             event->source_id, event->cookie);
         if (allocated_event == NULL) {
-            FWK_HOST_PRINT(err_msg_func, FWK_E_NOMEM, __func__);
+            FWK_LOG_CRIT(err_msg_func, FWK_E_NOMEM, __func__);
             return FWK_E_PARAM;
         }
 
@@ -117,9 +119,11 @@ static void process_next_event(void)
     ctx.current_event = event = FWK_LIST_GET(
         fwk_list_pop_head(&ctx.event_queue), struct fwk_event, slist_node);
 
-    FWK_HOST_PRINT("[THR] Get event (%s,%s,%s)\n",
-                   FWK_ID_STR(event->source_id), FWK_ID_STR(event->target_id),
-                   FWK_ID_STR(event->id));
+    FWK_LOG_TRACE(
+        "[FWK] Get event (%s: %s -> %s)\n",
+        FWK_ID_STR(event->id),
+        FWK_ID_STR(event->source_id),
+        FWK_ID_STR(event->target_id));
 
     module = __fwk_module_get_ctx(event->target_id)->desc;
     process_event = event->is_notification ? module->process_notification :
@@ -133,7 +137,7 @@ static void process_next_event(void)
 
         status = process_event(event, &async_response_event);
         if (status != FWK_SUCCESS)
-            FWK_HOST_PRINT(err_msg_line, status, __func__, __LINE__);
+            FWK_LOG_CRIT(err_msg_line, status, __func__, __LINE__);
 
         async_response_event.is_response = true;
         async_response_event.response_requested = false;
@@ -151,7 +155,7 @@ static void process_next_event(void)
     } else {
         status = process_event(event, &async_response_event);
         if (status != FWK_SUCCESS)
-            FWK_HOST_PRINT(err_msg_line, status, __func__, __LINE__);
+            FWK_LOG_CRIT(err_msg_line, status, __func__, __LINE__);
     }
 
     ctx.current_event = NULL;
@@ -172,10 +176,11 @@ static void process_isr(void)
                              struct fwk_event, slist_node);
     fwk_interrupt_global_enable();
 
-    FWK_HOST_PRINT("[THR] Get ISR event (%s,%s,%s)\n",
-                   FWK_ID_STR(isr_event->source_id),
-                   FWK_ID_STR(isr_event->target_id),
-                   FWK_ID_STR(isr_event->id));
+    FWK_LOG_TRACE(
+        "[FWK] Get ISR event (%s: %s -> %s)\n",
+        FWK_ID_STR(isr_event->id),
+        FWK_ID_STR(isr_event->source_id),
+        FWK_ID_STR(isr_event->target_id));
 
     fwk_list_push_tail(&ctx.event_queue, &isr_event->slist_node);
 }
@@ -186,14 +191,9 @@ static void process_isr(void)
 
 int __fwk_thread_init(size_t event_count)
 {
-    int status;
     struct fwk_event *event_table, *event;
 
     event_table = fwk_mm_calloc(event_count, sizeof(struct fwk_event));
-    if (event_table == NULL) {
-        status = FWK_E_NOMEM;
-        goto error;
-    }
 
     /* All the event structures are free to be used. */
     fwk_list_init(&ctx.free_event_queue);
@@ -208,10 +208,6 @@ int __fwk_thread_init(size_t event_count)
     ctx.initialized = true;
 
     return FWK_SUCCESS;
-
-error:
-    FWK_HOST_PRINT(err_msg_func, status, __func__);
-    return status;
 }
 
 noreturn void __fwk_thread_run(void)
@@ -220,8 +216,11 @@ noreturn void __fwk_thread_run(void)
         while (!fwk_list_is_empty(&ctx.event_queue))
             process_next_event();
 
-        while (fwk_list_is_empty(&ctx.isr_event_queue))
+        while (fwk_list_is_empty(&ctx.isr_event_queue)) {
+            fwk_log_unbuffer();
+
             continue;
+        }
 
         process_isr();
     }
@@ -291,6 +290,6 @@ int fwk_thread_put_event(struct fwk_event *event)
     return put_event(event);
 
 error:
-    FWK_HOST_PRINT(err_msg_func, status, __func__);
+    FWK_LOG_CRIT(err_msg_func, status, __func__);
     return status;
 }

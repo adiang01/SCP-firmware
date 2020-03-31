@@ -5,20 +5,26 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <stdbool.h>
-#include <string.h>
+#include <internal/scmi.h>
+#include <internal/smt.h>
+
+#include <mod_power_domain.h>
+#include <mod_scmi.h>
+#include <mod_smt.h>
+
 #include <fwk_assert.h>
+#include <fwk_event.h>
+#include <fwk_id.h>
 #include <fwk_interrupt.h>
+#include <fwk_log.h>
 #include <fwk_mm.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
 #include <fwk_notification.h>
 #include <fwk_status.h>
-#include <mod_log.h>
-#include <mod_power_domain.h>
-#include <mod_scmi.h>
-#include <mod_smt.h>
-#include <internal/smt.h>
+
+#include <stdbool.h>
+#include <string.h>
 
 struct smt_channel_ctx {
     /* Channel identifier */
@@ -53,9 +59,6 @@ struct smt_channel_ctx {
 };
 
 struct smt_ctx {
-    /* Log module API */
-    struct mod_log_api *log_api;
-
     /* Table of channel contexts */
     struct smt_channel_ctx *channel_ctx_table;
 
@@ -243,9 +246,8 @@ static int smt_slave_handler(struct smt_channel_ctx *channel_ctx)
 
     /* Check we have ownership of the mailbox */
     if (memory->status & MOD_SMT_MAILBOX_STATUS_FREE_MASK) {
-        smt_ctx.log_api->log(
-            MOD_LOG_GROUP_ERROR,
-            "[SMT] Mailbox ownership error on channel %u\n",
+        FWK_LOG_ERR(
+            "[SMT] Mailbox ownership error on channel %u",
             fwk_id_get_element_idx(channel_ctx->id));
 
         return FWK_E_STATE;
@@ -300,7 +302,7 @@ static int smt_signal_message(fwk_id_t channel_id)
 
     if (!channel_ctx->smt_mailbox_ready) {
         /* Discard any message in the mailbox when not ready */
-        smt_ctx.log_api->log(MOD_LOG_GROUP_ERROR, "[SMT] Message not valid\n");
+        FWK_LOG_ERR("[SMT] Message not valid");
 
         return FWK_SUCCESS;
     }
@@ -334,10 +336,6 @@ static int smt_init(fwk_id_t module_id, unsigned int element_count,
 {
     smt_ctx.channel_ctx_table = fwk_mm_calloc(element_count,
         sizeof(smt_ctx.channel_ctx_table[0]));
-    if (smt_ctx.channel_ctx_table == NULL) {
-        assert(false);
-        return FWK_E_NOMEM;
-    }
     smt_ctx.channel_count = element_count;
 
     return FWK_SUCCESS;
@@ -364,17 +362,8 @@ static int smt_channel_init(fwk_id_t channel_id, unsigned int unused,
     channel_ctx->in = fwk_mm_alloc(1, channel_ctx->config->mailbox_size);
     channel_ctx->out = fwk_mm_alloc(1, channel_ctx->config->mailbox_size);
 
-    if ((channel_ctx->in == NULL) || (channel_ctx->out == NULL))
-        return FWK_E_NOMEM;
-
     channel_ctx->max_payload_size = channel_ctx->config->mailbox_size -
         sizeof(struct mod_smt_memory);
-
-    /* Check memory allocations */
-    if ((channel_ctx->in == NULL) || (channel_ctx->out == NULL)) {
-        assert(false);
-        return FWK_E_NOMEM;
-    }
 
     return FWK_SUCCESS;
 }
@@ -385,11 +374,8 @@ static int smt_bind(fwk_id_t id, unsigned int round)
     struct smt_channel_ctx *channel_ctx;
 
     if (round == 0) {
-        if (fwk_id_is_type(id, FWK_ID_TYPE_MODULE)) {
-            return fwk_module_bind(fwk_module_id_log,
-                                   FWK_ID_API(FWK_MODULE_IDX_LOG, 0),
-                                   &smt_ctx.log_api);
-        }
+        if (fwk_id_is_type(id, FWK_ID_TYPE_MODULE))
+            return FWK_SUCCESS;
 
         channel_ctx = &smt_ctx.channel_ctx_table[fwk_id_get_element_idx(id)];
         status = fwk_module_bind(channel_ctx->config->driver_id,

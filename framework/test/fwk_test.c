@@ -4,18 +4,22 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include <setjmp.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <fwk_noreturn.h>
 #include <fwk_status.h>
 #include <fwk_test.h>
+
+#include <setjmp.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /* Test information provided by the test suite */
 extern struct fwk_test_suite_desc test_suite;
 
 static jmp_buf test_buf_context;
+
+__attribute((weak)) struct fwk_module *module_table[1];
+__attribute((weak)) struct fwk_module_config *module_config_table[1];
 
 noreturn void __assert_fail(const char *assertion,
     const char *file, unsigned int line, const char *function)

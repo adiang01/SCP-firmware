@@ -8,9 +8,14 @@
  *     SCMI sensor management protocol support.
  */
 
-#include <string.h>
+#include <internal/scmi.h>
+#include <internal/scmi_sensor.h>
+
+#include <mod_scmi.h>
+#include <mod_sensor.h>
+
 #include <fwk_assert.h>
-#include <fwk_element.h>
+#include <fwk_event.h>
 #include <fwk_id.h>
 #include <fwk_macros.h>
 #include <fwk_mm.h>
@@ -18,10 +23,10 @@
 #include <fwk_module_idx.h>
 #include <fwk_status.h>
 #include <fwk_thread.h>
-#include <internal/scmi.h>
-#include <internal/scmi_sensor.h>
-#include <mod_scmi.h>
-#include <mod_sensor.h>
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
 struct sensor_operations {
     /*
@@ -468,8 +473,6 @@ static int scmi_sensor_init(fwk_id_t module_id,
     scmi_sensor_ctx.sensor_ops_table =
         fwk_mm_calloc(scmi_sensor_ctx.sensor_count,
         sizeof(struct sensor_operations));
-    if (scmi_sensor_ctx.sensor_ops_table == NULL)
-        return FWK_E_NOMEM;
 
     /* Initialize the service identifier for each sensor to 'available' */
     for (unsigned int i = 0; i < scmi_sensor_ctx.sensor_count; i++)

@@ -5,17 +5,22 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <stddef.h>
+#include "config_power_domain.h"
+#include "sgm775_core.h"
+#include "sgm775_irq.h"
+#include "sgm775_mmap.h"
+
+#include <mod_power_domain.h>
+#include <mod_ppu_v1.h>
+
 #include <fwk_element.h>
+#include <fwk_id.h>
 #include <fwk_mm.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
-#include <mod_power_domain.h>
-#include <mod_ppu_v1.h>
-#include <sgm775_core.h>
-#include <sgm775_irq.h>
-#include <sgm775_mmap.h>
-#include <config_power_domain.h>
+
+#include <stddef.h>
+#include <stdint.h>
 
 static const char *core_pd_name_table[SGM775_CORE_PER_CLUSTER_MAX] = {
     "CLUS0CORE0", "CLUS0CORE1", "CLUS0CORE2", "CLUS0CORE3",
@@ -55,13 +60,9 @@ static const struct fwk_element *sgm775_ppu_v1_get_element_table
      */
     element_table = fwk_mm_calloc(sgm775_core_get_count() + 2,
                                   sizeof(struct fwk_element));
-    if (element_table == NULL)
-        return NULL;
 
     pd_config_table = fwk_mm_calloc(sgm775_core_get_count() + 1,
                                     sizeof(struct mod_ppu_v1_pd_config));
-    if (pd_config_table == NULL)
-        return NULL;
 
     for (core_idx = 0; core_idx < sgm775_core_get_count(); core_idx++) {
         element = &element_table[core_idx];

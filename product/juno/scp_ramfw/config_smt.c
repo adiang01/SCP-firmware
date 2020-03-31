@@ -5,19 +5,24 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include "config_power_domain.h"
+#include "juno_mhu.h"
+#include "juno_scmi.h"
+#include "software_mmap.h"
+
+#include <mod_smt.h>
+
 #include <fwk_element.h>
 #include <fwk_id.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
-#include <mod_smt.h>
-#include <config_power_domain.h>
-#include <juno_mhu.h>
-#include <juno_scmi.h>
-#include <software_mmap.h>
+
+#include <stddef.h>
+#include <stdint.h>
 
 static const struct fwk_element element_table[] = {
     [JUNO_SCMI_SERVICE_IDX_PSCI] = {
-        .name = "PSCI",
+        .name = "",
         .data = &(struct mod_smt_channel_config) {
             .type = MOD_SMT_CHANNEL_TYPE_SLAVE,
             .policies = (MOD_SMT_POLICY_INIT_MAILBOX | MOD_SMT_POLICY_SECURE),
@@ -34,7 +39,7 @@ static const struct fwk_element element_table[] = {
         }
     },
     [JUNO_SCMI_SERVICE_IDX_OSPM_0] = {
-        .name = "OSPM0",
+        .name = "",
         .data = &(struct mod_smt_channel_config) {
             .type = MOD_SMT_CHANNEL_TYPE_SLAVE,
             .policies = MOD_SMT_POLICY_INIT_MAILBOX,
@@ -51,7 +56,7 @@ static const struct fwk_element element_table[] = {
         }
     },
     [JUNO_SCMI_SERVICE_IDX_OSPM_1] = {
-        .name = "OSPM1",
+        .name = "",
         .data = &(struct mod_smt_channel_config) {
             .type = MOD_SMT_CHANNEL_TYPE_SLAVE,
             .policies = MOD_SMT_POLICY_INIT_MAILBOX,

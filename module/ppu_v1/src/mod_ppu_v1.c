@@ -8,22 +8,29 @@
  *     Power State Management PPU v1 driver.
  */
 
-#include <stdbool.h>
+#include <ppu_v1.h>
+
+#include <mod_power_domain.h>
+#include <mod_ppu_v1.h>
+
+#if BUILD_HAS_MOD_SYSTEM_POWER
+#    include <mod_system_power.h>
+#endif
+
 #include <fwk_assert.h>
+#include <fwk_event.h>
 #include <fwk_id.h>
 #include <fwk_interrupt.h>
+#include <fwk_log.h>
 #include <fwk_macros.h>
 #include <fwk_mm.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
 #include <fwk_notification.h>
-#include <mod_log.h>
-#include <mod_power_domain.h>
-#include <mod_ppu_v1.h>
-#include <ppu_v1.h>
-#if BUILD_HAS_MOD_SYSTEM_POWER
-#include <mod_system_power.h>
-#endif
+#include <fwk_status.h>
+
+#include <stdbool.h>
+#include <stddef.h>
 
 #define CORE_PER_CLUSTER_COUNT_MAX 8
 
@@ -70,9 +77,6 @@ struct ppu_v1_ctx {
 
     /* Number of power domains */
     size_t pd_ctx_table_size;
-
-    /* Log API */
-    struct mod_log_api *log_api;
 };
 
 /*
@@ -117,8 +121,7 @@ static int get_state(struct ppu_v1_reg *ppu, unsigned int *state)
         *state = MOD_PD_STATE_SLEEP;
 
     if (*state == MODE_UNSUPPORTED) {
-        ppu_v1_ctx.log_api->log(MOD_LOG_GROUP_ERROR,
-                                "[PPU_V1] Unexpected PPU mode (%i).\n", mode);
+        FWK_LOG_ERR("[PPU_V1] Unexpected PPU mode (%i).", mode);
         return FWK_E_DEVICE;
     }
 
@@ -148,8 +151,7 @@ static int ppu_v1_pd_set_state(fwk_id_t pd_id, unsigned int state)
         break;
 
     default:
-        ppu_v1_ctx.log_api->log(MOD_LOG_GROUP_ERROR,
-            "[PD] Requested power state (%i) is not supported.\n", state);
+        FWK_LOG_ERR("[PD] Requested power state (%i) is not supported.", state);
         return FWK_E_PARAM;
     }
 
@@ -271,9 +273,8 @@ static int ppu_v1_core_pd_set_state(fwk_id_t core_pd_id, unsigned int state)
         break;
 
     default:
-        ppu_v1_ctx.log_api->log(MOD_LOG_GROUP_ERROR,
-            "[PPU_V1] Requested CPU power state (%i) is not supported!\n",
-            state);
+        FWK_LOG_ERR(
+            "[PPU_V1] Requested CPU power state (%i) is not supported!", state);
         return FWK_E_PARAM;
     }
 
@@ -524,9 +525,8 @@ static int ppu_v1_cluster_pd_set_state(fwk_id_t cluster_pd_id,
         return status;
 
     default:
-        ppu_v1_ctx.log_api->log(MOD_LOG_GROUP_ERROR,
-            "[PPU_V1] Requested CPU power state (%i) is not supported!\n",
-            state);
+        FWK_LOG_ERR(
+            "[PPU_V1] Requested CPU power state (%i) is not supported!", state);
         return FWK_E_PARAM;
     }
 }
@@ -648,8 +648,6 @@ static int ppu_v1_mod_init(fwk_id_t module_id, unsigned int pd_count,
 {
     ppu_v1_ctx.pd_ctx_table = fwk_mm_calloc(pd_count,
                                             sizeof(struct ppu_v1_pd_ctx));
-    if (ppu_v1_ctx.pd_ctx_table == NULL)
-        return FWK_E_NOMEM;
 
     ppu_v1_ctx.pd_ctx_table_size = pd_count;
 
@@ -677,8 +675,6 @@ static int ppu_v1_pd_init(fwk_id_t pd_id, unsigned int unused, const void *data)
 
     if (config->pd_type == MOD_PD_TYPE_CLUSTER) {
         pd_ctx->data = fwk_mm_calloc(1, sizeof(struct ppu_v1_cluster_pd_ctx));
-        if (pd_ctx->data == NULL)
-            return FWK_E_NOMEM;
     }
 
     if (config->default_power_on) {
@@ -745,13 +741,8 @@ static int ppu_v1_bind(fwk_id_t id, unsigned int round)
     if (round == 0)
         return FWK_SUCCESS;
 
-    /* In the case of the module, bind to the log component */
-    if (fwk_id_is_type(id, FWK_ID_TYPE_MODULE)) {
-        status = fwk_module_bind(FWK_ID_MODULE(FWK_MODULE_IDX_LOG),
-                                 FWK_ID_API(FWK_MODULE_IDX_LOG, 0),
-                                 &ppu_v1_ctx.log_api);
-        return status;
-    }
+    if (fwk_id_is_type(id, FWK_ID_TYPE_MODULE))
+        return FWK_SUCCESS;
 
     pd_ctx = ppu_v1_ctx.pd_ctx_table + fwk_id_get_element_idx(id);
 

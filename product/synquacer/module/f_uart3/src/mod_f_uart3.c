@@ -5,16 +5,20 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <fmw_cmsis.h>
-#include <fwk_assert.h>
-#include <fwk_mm.h>
-#include <fwk_module.h>
-#include <fwk_notification.h>
-#include <fwk_status.h>
-#include <mod_clock.h>
+#include <f_uart3.h>
+
 #include <mod_f_uart3.h>
 #include <mod_log.h>
-#include <f_uart3.h>
+
+#include <fwk_id.h>
+#include <fwk_mm.h>
+#include <fwk_module.h>
+#include <fwk_status.h>
+
+#include <fmw_cmsis.h>
+
+#include <stdbool.h>
+#include <stddef.h>
 
 static const struct mod_f_uart3_device_config **device_config_table;
 
@@ -134,8 +138,6 @@ static int f_uart3_init(
      */
     device_config_table =
         fwk_mm_calloc(element_count, sizeof(*device_config_table));
-    if (device_config_table == NULL)
-        return FWK_E_NOMEM;
 
     return FWK_SUCCESS;
 }

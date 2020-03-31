@@ -259,6 +259,13 @@ LIB_TARGETS_y += $(FWK_DIR)/src
 LIBS_y += $(call lib_path,arch$(BUILD_SUFFIX))
 LIBS_y += $(call lib_path,framework$(BUILD_SUFFIX))
 
+# Add the CLI Debugger library
+INCLUDES += $(DBG_DIR)/include
+ifeq ($(BUILD_HAS_DEBUGGER),yes)
+    LIB_TARGETS_y += $(DBG_DIR)/src
+    LIBS_y += $(call lib_path,debugger$(BUILD_SUFFIX))
+endif
+
 SOURCES += $(BUILD_FIRMWARE_DIR)/fwk_module_list.c
 $(BUILD_FIRMWARE_DIR)/fwk_module_list.c: gen_module
 EXTRA_DEP := gen_module
@@ -299,7 +306,7 @@ $(TARGET_ELF): $(LIB_TARGETS_y) $(SCATTER_PP) $(OBJECTS) | $$(@D)/
 
 $(SCATTER_PP): $(SCATTER_SRC) | $$(@D)/
 	$(call show-action,GEN,$@)
-	$(CC) $(CFLAGS) -E -P -C $< -o $@
+	$(CC) $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 $(TARGET_BIN): $(TARGET_ELF) | $$(@D)/
 	$(call show-action,BIN,$@)

@@ -5,15 +5,18 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include "juno_scmi.h"
+
+#include <internal/scmi.h>
+
+#include <mod_scmi.h>
+#include <mod_smt.h>
+
 #include <fwk_element.h>
 #include <fwk_id.h>
 #include <fwk_macros.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
-#include <mod_scmi.h>
-#include <mod_smt.h>
-#include <juno_scmi.h>
-#include <internal/scmi.h>
 
 static const struct fwk_element element_table[] = {
     [JUNO_SCMI_SERVICE_IDX_PSCI] = {
@@ -33,7 +36,7 @@ static const struct fwk_element element_table[] = {
     },
 
     [JUNO_SCMI_SERVICE_IDX_OSPM_0] = {
-        .name = "OSPM 0",
+        .name = "OSPM-0",
         .data = &(struct mod_scmi_service_config) {
             .transport_id = FWK_ID_ELEMENT_INIT(
                 FWK_MODULE_IDX_SMT,
@@ -49,7 +52,7 @@ static const struct fwk_element element_table[] = {
     },
 
     [JUNO_SCMI_SERVICE_IDX_OSPM_1] = {
-        .name = "OSPM 1",
+        .name = "OSPM-1",
         .data = &(struct mod_scmi_service_config) {
             .transport_id = FWK_ID_ELEMENT_INIT(
                 FWK_MODULE_IDX_SMT,

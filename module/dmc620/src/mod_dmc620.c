@@ -8,18 +8,21 @@
  *     DMC-620 driver
  */
 
+#include <mod_clock.h>
+#include <mod_dmc620.h>
+
 #include <fwk_assert.h>
+#include <fwk_event.h>
+#include <fwk_log.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
 #include <fwk_notification.h>
 #include <fwk_status.h>
-#include <mod_dmc620.h>
-#include <mod_clock.h>
-#include <mod_log.h>
-#include <mod_power_domain.h>
-#include <cmsis_compiler.h>
 
-static struct mod_log_api *log_api;
+#include <fmw_cmsis.h>
+
+#include <stddef.h>
+
 static struct mod_dmc_ddr_phy_api *ddr_phy_api;
 
 static int dmc620_config(struct mod_dmc620_reg *dmc, fwk_id_t ddr_id);
@@ -54,11 +57,6 @@ static int mod_dmc620_bind(fwk_id_t id, unsigned int round)
 
     module_config = fwk_module_get_data(fwk_module_id_dmc620);
     assert(module_config != NULL);
-
-    status = fwk_module_bind(FWK_ID_MODULE(FWK_MODULE_IDX_LOG),
-                             MOD_LOG_API_ID, &log_api);
-    if (status != FWK_SUCCESS)
-        return status;
 
     status = fwk_module_bind(module_config->ddr_module_id,
                              module_config->ddr_api_id, &ddr_phy_api);
@@ -127,22 +125,15 @@ const struct fwk_module module_dmc620 = {
 static int dmc620_config(struct mod_dmc620_reg *dmc, fwk_id_t ddr_id)
 {
     int i;
-    int status;
     struct mod_dmc620_reg *reg_val;
     const struct mod_dmc620_module_config *module_config;
 
     module_config = fwk_module_get_data(fwk_module_id_dmc620);
     reg_val = module_config->dmc_val;
 
-    status = log_api->log(MOD_LOG_GROUP_INFO,
-        "[DDR] Initialising DMC620 at 0x%x\n", (uintptr_t) dmc);
-    if (status != FWK_SUCCESS)
-        return status;
+    FWK_LOG_INFO("[DDR] Initialising DMC620 at 0x%x", (uintptr_t)dmc);
 
-    status = log_api->log(MOD_LOG_GROUP_INFO,
-        "[DDR] Writing functional settings\n");
-    if (status != FWK_SUCCESS)
-        return status;
+    FWK_LOG_INFO("[DDR] Writing functional settings");
 
     dmc->ADDRESS_CONTROL_NEXT = reg_val->ADDRESS_CONTROL_NEXT;
 
@@ -209,10 +200,7 @@ static int dmc620_config(struct mod_dmc620_reg *dmc, fwk_id_t ddr_id)
     dmc->MUX_CONTROL_NEXT = reg_val->MUX_CONTROL_NEXT;
 
     /* Timing Configuration */
-    status = log_api->log(MOD_LOG_GROUP_INFO,
-        "[DDR] Writing timing settings\n");
-    if (status != FWK_SUCCESS)
-        return status;
+    FWK_LOG_INFO("[DDR] Writing timing settings");
 
     dmc->T_REFI_NEXT = reg_val->T_REFI_NEXT;
     dmc->T_RFC_NEXT = reg_val->T_RFC_NEXT;
@@ -271,10 +259,7 @@ static int dmc620_config(struct mod_dmc620_reg *dmc, fwk_id_t ddr_id)
     for (i = 0; i < 3; i++) /* ~200ns */
         __NOP();
 
-    status = log_api->log(MOD_LOG_GROUP_INFO,
-        "[DDR] Sending direct DDR commands\n");
-    if (status != FWK_SUCCESS)
-        return status;
+    FWK_LOG_INFO("[DDR] Sending direct DDR commands");
 
     module_config->direct_ddr_cmd(dmc);
 
@@ -282,10 +267,7 @@ static int dmc620_config(struct mod_dmc620_reg *dmc, fwk_id_t ddr_id)
         __NOP();
 
     /* Switch to READY */
-    status = log_api->log(MOD_LOG_GROUP_INFO,
-        "[DDR] Setting DMC to READY mode\n");
-    if (status != FWK_SUCCESS)
-        return status;
+    FWK_LOG_INFO("[DDR] Setting DMC to READY mode");
 
     dmc->MEMC_CMD = MOD_DMC620_MEMC_CMD_GO;
     dmc->MEMC_CMD = MOD_DMC620_MEMC_CMD_EXECUTE;
@@ -293,9 +275,7 @@ static int dmc620_config(struct mod_dmc620_reg *dmc, fwk_id_t ddr_id)
     while ((dmc->MEMC_STATUS & MOD_DMC620_MEMC_CMD) != MOD_DMC620_MEMC_CMD_GO)
         continue;
 
-    status = log_api->log(MOD_LOG_GROUP_INFO, "[DDR] DMC init done.\n");
-    if (status != FWK_SUCCESS)
-        return status;
+    FWK_LOG_INFO("[DDR] DMC init done.");
 
     return FWK_SUCCESS;
 }

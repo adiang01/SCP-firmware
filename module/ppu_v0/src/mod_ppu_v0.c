@@ -8,20 +8,26 @@
  *     Power State Management PPU v0 driver.
  */
 
-#include <stdint.h>
-#include <fwk_id.h>
+#include <ppu_v0.h>
+
+#include <mod_power_domain.h>
+#include <mod_ppu_v0.h>
+
+#if BUILD_HAS_MOD_SYSTEM_POWER
+#    include <mod_system_power.h>
+#endif
+
 #include <fwk_assert.h>
+#include <fwk_id.h>
+#include <fwk_log.h>
 #include <fwk_macros.h>
 #include <fwk_mm.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
-#include <mod_log.h>
-#include <mod_power_domain.h>
-#include <mod_ppu_v0.h>
-#include <ppu_v0.h>
-#if BUILD_HAS_MOD_SYSTEM_POWER
-#include <mod_system_power.h>
-#endif
+#include <fwk_status.h>
+
+#include <stddef.h>
+#include <stdint.h>
 
 /* Power domain context */
 struct ppu_v0_pd_ctx {
@@ -42,9 +48,6 @@ struct ppu_v0_pd_ctx {
 struct ppu_v0_ctx {
     /* Table of the power domain contexts */
     struct ppu_v0_pd_ctx *pd_ctx_table;
-
-    /* Log API */
-   struct mod_log_api *log_api;
 };
 
 /*
@@ -83,8 +86,7 @@ static int get_state(struct ppu_v0_reg *ppu, unsigned int *state)
 
     *state = ppu_mode_to_power_state[ppu_mode];
     if (*state == MODE_UNSUPPORTED) {
-        ppu_v0_ctx.log_api->log(MOD_LOG_GROUP_ERROR,
-                                "[PD] Unexpected PPU mode (%i).\n", ppu_mode);
+        FWK_LOG_ERR("[PD] Unexpected PPU mode (%i).", ppu_mode);
         return FWK_E_DEVICE;
     }
 
@@ -123,8 +125,7 @@ static int pd_set_state(fwk_id_t pd_id, unsigned int state)
         break;
 
     default:
-        ppu_v0_ctx.log_api->log(MOD_LOG_GROUP_ERROR,
-            "[PD] Requested power state (%i) is not supported.\n", state);
+        FWK_LOG_ERR("[PD] Requested power state (%i) is not supported.", state);
         return FWK_E_PARAM;
     }
 
@@ -170,8 +171,6 @@ static int ppu_v0_mod_init(fwk_id_t module_id, unsigned int pd_count,
 {
     ppu_v0_ctx.pd_ctx_table = fwk_mm_calloc(pd_count,
                                             sizeof(struct ppu_v0_pd_ctx));
-    if (ppu_v0_ctx.pd_ctx_table == NULL)
-        return FWK_E_NOMEM;
 
     return FWK_SUCCESS;
 }
@@ -217,12 +216,8 @@ static int ppu_v0_bind(fwk_id_t id, unsigned int round)
     if (round == 0)
         return FWK_SUCCESS;
 
-    /* In the case of the module, bind to the log component */
-    if (fwk_module_is_valid_module_id(id)) {
-        return fwk_module_bind(FWK_ID_MODULE(FWK_MODULE_IDX_LOG),
-                               FWK_ID_API(FWK_MODULE_IDX_LOG, 0),
-                               &ppu_v0_ctx.log_api);
-    }
+    if (fwk_id_is_type(id, FWK_ID_TYPE_MODULE))
+        return FWK_SUCCESS;
 
     pd_ctx = ppu_v0_ctx.pd_ctx_table + fwk_id_get_element_idx(id);
 

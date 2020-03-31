@@ -5,16 +5,20 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include "config_power_domain.h"
+#include "juno_id.h"
+#include "system_mmap.h"
+
+#include <mod_juno_dmc400.h>
+
 #include <fwk_assert.h>
 #include <fwk_element.h>
-#include <fwk_macros.h>
-#include <fwk_mm.h>
+#include <fwk_id.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
-#include <mod_juno_dmc400.h>
-#include <config_power_domain.h>
-#include <juno_id.h>
-#include <system_mmap.h>
+#include <fwk_status.h>
+
+#include <stddef.h>
 
 /* All Juno variants but A */
 #define COL_BITS                2
@@ -36,7 +40,7 @@
 
 static struct fwk_element juno_dmc400_element_table[] = {
     [0] = {
-        .name = "DMC400",
+        .name = "",
         .data = &((struct mod_juno_dmc400_element_config) {
             .dmc = DMC400_BASE,
             .ddr_phy_0_id = FWK_ID_ELEMENT_INIT(FWK_MODULE_IDX_JUNO_DDR_PHY400,

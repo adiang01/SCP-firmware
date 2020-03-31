@@ -5,19 +5,22 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include "sgm775_scmi.h"
+
+#include <internal/scmi.h>
+
+#include <mod_scmi.h>
+#include <mod_smt.h>
+
 #include <fwk_element.h>
 #include <fwk_id.h>
 #include <fwk_macros.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
-#include <sgm775_scmi.h>
-#include <mod_scmi.h>
-#include <internal/scmi.h>
-#include <mod_smt.h>
 
 static const struct fwk_element service_table[] = {
     [SGM775_SCMI_SERVICE_IDX_PSCI] = {
-        .name = "SERVICE0",
+        .name = "PSCI",
         .data = &((struct mod_scmi_service_config) {
             .transport_id = FWK_ID_ELEMENT_INIT(FWK_MODULE_IDX_SMT,
                                                 SGM775_SCMI_SERVICE_IDX_PSCI),
@@ -30,7 +33,7 @@ static const struct fwk_element service_table[] = {
         }),
     },
     [SGM775_SCMI_SERVICE_IDX_OSPM_0] = {
-        .name = "SERVICE1",
+        .name = "OSPM-0",
         .data = &((struct mod_scmi_service_config) {
             .transport_id = FWK_ID_ELEMENT_INIT(FWK_MODULE_IDX_SMT,
                                                 SGM775_SCMI_SERVICE_IDX_OSPM_0),
@@ -43,7 +46,7 @@ static const struct fwk_element service_table[] = {
         }),
     },
     [SGM775_SCMI_SERVICE_IDX_OSPM_1] = {
-        .name = "SERVICE2",
+        .name = "OSPM-1",
         .data = &((struct mod_scmi_service_config) {
             .transport_id = FWK_ID_ELEMENT_INIT(FWK_MODULE_IDX_SMT,
                                                 SGM775_SCMI_SERVICE_IDX_OSPM_1),

@@ -4,16 +4,19 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include <stdbool.h>
-#include <string.h>
+#include <mod_i2c.h>
+
 #include <fwk_assert.h>
+#include <fwk_event.h>
 #include <fwk_id.h>
 #include <fwk_mm.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
 #include <fwk_status.h>
 #include <fwk_thread.h>
-#include <mod_i2c.h>
+
+#include <stdbool.h>
+#include <string.h>
 
 enum mod_i2c_dev_state {
     MOD_I2C_DEV_IDLE,
@@ -206,9 +209,6 @@ static int mod_i2c_init(fwk_id_t module_id,
 {
     ctx_table = fwk_mm_calloc(element_count, sizeof(ctx_table[0]));
 
-    if (ctx_table == NULL)
-        return FWK_E_NOMEM;
-
     return FWK_SUCCESS;
 }
 
@@ -296,7 +296,7 @@ static int respond_to_caller(
 
 static int process_request(struct mod_i2c_dev_ctx *ctx, fwk_id_t event_id)
 {
-    int drv_status;
+    int drv_status = FWK_E_PARAM;
     const struct mod_i2c_driver_api *driver_api = ctx->driver_api;
     fwk_id_t driver_id = ctx->config->driver_id;
 

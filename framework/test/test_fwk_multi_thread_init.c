@@ -5,9 +5,10 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdlib.h>
+#include <internal/fwk_id.h>
+#include <internal/fwk_module.h>
+#include <internal/fwk_multi_thread.h>
+
 #include <fwk_assert.h>
 #include <fwk_element.h>
 #include <fwk_event.h>
@@ -15,9 +16,10 @@
 #include <fwk_macros.h>
 #include <fwk_status.h>
 #include <fwk_test.h>
-#include <internal/fwk_id.h>
-#include <internal/fwk_module.h>
-#include <internal/fwk_multi_thread.h>
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 #define COMMON_THREAD_ID    12
 
@@ -51,6 +53,12 @@ uint32_t __wrap_osThreadFlagsSet(osThreadId_t thread_id, uint32_t flags)
 {
     (void) thread_id;
     (void) flags;
+    return 0;
+}
+
+uint32_t __wrap_osThreadFlagsClear(uint32_t flags)
+{
+    (void)flags;
     return 0;
 }
 
@@ -157,42 +165,6 @@ static void test_case_setup(void)
     osThreadNew_return_val = (osThreadId_t)COMMON_THREAD_ID;
     osKernelInitailize_return_val = osOK;
 }
-static void test_kernel_initialization_failed(void)
-{
-    int result;
-
-    osKernelInitailize_return_val = osError;
-    result = __fwk_thread_init(2);
-    assert(result == FWK_E_OS);
-}
-
-static void test_init_memory_allocation_failed(void)
-{
-    int result;
-
-    /* Memory allocation failed */
-    fwk_mm_calloc_failed_call = 0;
-    result = __fwk_thread_init(2);
-    assert(result == FWK_E_NOMEM);
-}
-
-static void test_init_common_thread_cb_allocation_failed(void)
-{
-    int result;
-
-    fwk_mm_calloc_failed_call = 1;
-    result = __fwk_thread_init(2);
-    assert(result == FWK_E_NOMEM);
-}
-
-static void test_init_common_thread_stack_allocation_failed(void)
-{
-    int result;
-
-    fwk_mm_calloc_failed_call = 2;
-    result = __fwk_thread_init(2);
-    assert(result == FWK_E_NOMEM);
-}
 
 static void test_init_common_thread_failed(void)
 {
@@ -215,10 +187,6 @@ static void test_init_succeed(void)
 }
 
 static const struct fwk_test_case_desc test_case_table[] = {
-    FWK_TEST_CASE(test_kernel_initialization_failed),
-    FWK_TEST_CASE(test_init_memory_allocation_failed),
-    FWK_TEST_CASE(test_init_common_thread_cb_allocation_failed),
-    FWK_TEST_CASE(test_init_common_thread_stack_allocation_failed),
     FWK_TEST_CASE(test_init_common_thread_failed),
     FWK_TEST_CASE(test_init_succeed),
 };

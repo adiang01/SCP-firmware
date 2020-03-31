@@ -5,9 +5,10 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <setjmp.h>
-#include <stdbool.h>
-#include <stdlib.h>
+#include <internal/fwk_module.h>
+#include <internal/fwk_single_thread.h>
+#include <internal/fwk_thread.h>
+
 #include <fwk_assert.h>
 #include <fwk_id.h>
 #include <fwk_list.h>
@@ -15,9 +16,10 @@
 #include <fwk_slist.h>
 #include <fwk_status.h>
 #include <fwk_test.h>
-#include <internal/fwk_module.h>
-#include <internal/fwk_single_thread.h>
-#include <internal/fwk_thread.h>
+
+#include <setjmp.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
 /* Mock functions */
 static void * fwk_mm_calloc_val;
@@ -128,10 +130,6 @@ static void test___fwk_notification_init(void)
     int result;
     size_t notification_count = 4;
 
-    /* Memory allocation failed */
-    fwk_mm_calloc_return_val = false;
-    result = __fwk_notification_init(notification_count);
-    assert(result == FWK_E_NOMEM);
     fwk_mm_calloc_return_val = true;
 
     /* Insert 2 events in the list */

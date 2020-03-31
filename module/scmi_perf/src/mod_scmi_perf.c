@@ -8,21 +8,26 @@
  *     SCMI performance domain management protocol support.
  */
 
-#include <string.h>
+#include <internal/scmi.h>
+#include <internal/scmi_perf.h>
+
+#include <mod_dvfs.h>
+#include <mod_scmi.h>
+#include <mod_scmi_perf.h>
+
 #include <fwk_assert.h>
+#include <fwk_event.h>
+#include <fwk_id.h>
 #include <fwk_macros.h>
 #include <fwk_mm.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
-#ifdef BUILD_HAS_MULTITHREADING
-#include <fwk_multi_thread.h>
-#endif
 #include <fwk_status.h>
-#include <internal/scmi.h>
-#include <internal/scmi_perf.h>
-#include <mod_dvfs.h>
-#include <mod_scmi.h>
-#include <mod_scmi_perf.h>
+#include <fwk_thread.h>
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <string.h>
 
 static int scmi_perf_protocol_version_handler(
     fwk_id_t service_id, const uint32_t *payload);
@@ -687,8 +692,6 @@ static int scmi_perf_init(fwk_id_t module_id, unsigned int element_count,
 
     scmi_perf_ctx.perf_ops_table = fwk_mm_calloc(return_val,
         sizeof(struct perf_operations));
-    if (scmi_perf_ctx.perf_ops_table == NULL)
-        return FWK_E_NOMEM;
 
     scmi_perf_ctx.config = config;
     scmi_perf_ctx.domain_count = return_val;

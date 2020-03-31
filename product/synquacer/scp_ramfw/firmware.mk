@@ -10,10 +10,6 @@ BS_FIRMWARE_HAS_MULTITHREADING := yes
 BS_FIRMWARE_HAS_NOTIFICATION := yes
 
 DEFINES += HAS_RTOS
-DEFINES += SYNQUACER_LOG_GROUP_ERROR
-DEFINES += SYNQUACER_LOG_GROUP_INFO
-DEFINES += SYNQUACER_LOG_GROUP_WARNING
-#DEFINES += SYNQUACER_LOG_GROUP_DEBUG
 DEFINES += PCIE_FILTER_BUS0_TYPE0_CONFIG
 DEFINES += ENABLE_OPTEE
 DEFINES += SET_PCIE_NON_SECURE
@@ -67,6 +63,7 @@ BS_FIRMWARE_SOURCES := \
     config_synquacer_memc.c \
     config_system_power.c \
     config_timer.c \
-    rtx_config.c
+    rtx_config.c \
+    config_scmi_power_domain.c
 
 include $(BS_DIR)/firmware.mk

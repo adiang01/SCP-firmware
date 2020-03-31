@@ -8,16 +8,20 @@
  *      Message Handling Unit (MHU) Device Driver.
  */
 
-#include <stddef.h>
-#include <stdint.h>
+#include <internal/mhu.h>
+
+#include <mod_mhu.h>
+#include <mod_smt.h>
+
 #include <fwk_id.h>
 #include <fwk_interrupt.h>
 #include <fwk_mm.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
 #include <fwk_status.h>
-#include <internal/mhu.h>
-#include <mod_smt.h>
+
+#include <stddef.h>
+#include <stdint.h>
 
 /*
  * Maximum number of slots per MHU device. The maximum number of slots is 31 and
@@ -136,8 +140,6 @@ static int mhu_init(fwk_id_t module_id, unsigned int device_count,
 
     mhu_ctx.device_ctx_table = fwk_mm_calloc(device_count,
         sizeof(mhu_ctx.device_ctx_table[0]));
-    if (mhu_ctx.device_ctx_table == NULL)
-        return FWK_E_NOMEM;
 
     mhu_ctx.device_count = device_count;
 
@@ -157,8 +159,6 @@ static int mhu_device_init(fwk_id_t device_id, unsigned int slot_count,
 
     device_ctx->smt_channel_table = fwk_mm_calloc(slot_count,
         sizeof(device_ctx->smt_channel_table[0]));
-    if (device_ctx->smt_channel_table == NULL)
-        return FWK_E_NOMEM;
 
     device_ctx->config = config;
     device_ctx->slot_count = slot_count;

@@ -13,6 +13,9 @@ BS_FIRMWARE_HAS_MULTITHREADING := yes
 BS_FIRMWARE_HAS_NOTIFICATION := yes
 
 BS_FIRMWARE_MODULES := \
+    sid \
+    system_info \
+    pcid \
     pl011 \
     log \
     gtimer \
@@ -70,6 +73,14 @@ BS_FIRMWARE_SOURCES := \
     config_scmi_perf.c \
     config_scmi_system_power.c \
     config_scmi_apcore.c \
-    config_system_power.c
+    config_system_power.c \
+    config_sid.c \
+    config_system_info.c \
+    config_scmi_power_domain.c
+
+ifeq ($(BUILD_HAS_DEBUGGER),yes)
+    BS_FIRMWARE_MODULES += debugger_cli
+    BS_FIRMWARE_SOURCES += config_debugger_cli.c
+endif
 
 include $(BS_DIR)/firmware.mk

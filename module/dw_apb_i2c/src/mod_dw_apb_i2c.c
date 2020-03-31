@@ -4,16 +4,20 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include <stdbool.h>
+#include <dw_apb_i2c.h>
+
+#include <mod_dw_apb_i2c.h>
+#include <mod_i2c.h>
+#include <mod_timer.h>
+
 #include <fwk_id.h>
 #include <fwk_interrupt.h>
 #include <fwk_mm.h>
 #include <fwk_module.h>
 #include <fwk_status.h>
-#include <mod_dw_apb_i2c.h>
-#include <mod_i2c.h>
-#include <mod_timer.h>
-#include <dw_apb_i2c.h>
+
+#include <stdbool.h>
+#include <stddef.h>
 
 struct dw_apb_i2c_ctx {
     const struct mod_dw_apb_i2c_dev_config *config;
@@ -223,9 +227,6 @@ static int dw_apb_i2c_init(fwk_id_t module_id,
                                const void *data)
 {
     ctx_table = fwk_mm_calloc(element_count, sizeof(*ctx_table));
-
-    if (ctx_table == NULL)
-        return FWK_E_NOMEM;
 
     return FWK_SUCCESS;
 }

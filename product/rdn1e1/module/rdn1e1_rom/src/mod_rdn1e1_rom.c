@@ -5,18 +5,21 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <stdint.h>
-#include <string.h>
+#include <mod_rdn1e1_rom.h>
+
+#include <fwk_event.h>
+#include <fwk_id.h>
 #include <fwk_interrupt.h>
+#include <fwk_log.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
 #include <fwk_status.h>
 #include <fwk_thread.h>
-#include <mod_log.h>
-#include <mod_rdn1e1_rom.h>
+
+#include <stdint.h>
+#include <string.h>
 
 static const struct rdn1e1_rom_config *rom_config;
-static struct mod_log_api *log_api;
 
 enum rom_event {
     ROM_EVENT_RUN,
@@ -59,24 +62,6 @@ static int rdn1e1_rom_init(fwk_id_t module_id, unsigned int element_count,
     return FWK_SUCCESS;
 }
 
-static int rdn1e1_rom_bind(fwk_id_t id, unsigned int round)
-{
-    int status;
-
-    /* Use second round only (round numbering is zero-indexed) */
-    if (round == 1) {
-        /* Bind to the log component */
-        status = fwk_module_bind(FWK_ID_MODULE(FWK_MODULE_IDX_LOG),
-                                 FWK_ID_API(FWK_MODULE_IDX_LOG, 0),
-                                 &log_api);
-
-        if (status != FWK_SUCCESS)
-            return FWK_E_PANIC;
-    }
-
-    return FWK_SUCCESS;
-}
-
 static int rdn1e1_rom_start(fwk_id_t id)
 {
     int status;
@@ -94,7 +79,7 @@ static int rdn1e1_rom_start(fwk_id_t id)
 static int rdn1e1_rom_process_event(const struct fwk_event *event,
     struct fwk_event *resp)
 {
-    log_api->log(MOD_LOG_GROUP_INFO, "[ROM] Launch RAM\n");
+    FWK_LOG_INFO("[ROM] Launch RAM");
 
     if (rom_config->load_ram_size != 0) {
         memcpy((void *)rom_config->ramfw_base,
@@ -112,7 +97,6 @@ const struct fwk_module module_rdn1e1_rom = {
     .type = FWK_MODULE_TYPE_SERVICE,
     .event_count = ROM_EVENT_COUNT,
     .init = rdn1e1_rom_init,
-    .bind = rdn1e1_rom_bind,
     .start = rdn1e1_rom_start,
     .process_event = rdn1e1_rom_process_event,
 };

@@ -5,16 +5,22 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include "config_power_domain.h"
+#include "juno_clock.h"
+#include "juno_id.h"
+#include "juno_scc.h"
+#include "scp_config.h"
+
+#include <mod_juno_soc_clock_ram.h>
+
 #include <fwk_element.h>
+#include <fwk_id.h>
 #include <fwk_macros.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
-#include <mod_juno_soc_clock_ram.h>
-#include <juno_clock.h>
-#include <juno_id.h>
-#include <juno_scc.h>
-#include <scp_config.h>
-#include <config_power_domain.h>
+#include <fwk_status.h>
+
+#include <stddef.h>
 
 /*
  * Big cluster rate tables respectively for Juno r0, r1 and r2.
@@ -430,15 +436,15 @@ static struct mod_juno_soc_clock_ram_dev_config gpu_clock_config = {
 
 static struct fwk_element juno_soc_clock_element_table[] = {
     [JUNO_CLOCK_SOC_RAM_IDX_BIGCLK] = {
-        .name = "BIG_CLUSTER",
+        .name = "",
         .data = &big_cluster_clock_config,
     },
     [JUNO_CLOCK_SOC_RAM_IDX_LITTLECLK] = {
-        .name = "LITTLE_CLUSTER",
+        .name = "",
         .data = &little_cluster_clock_config,
     },
     [JUNO_CLOCK_SOC_RAM_IDX_GPUCLK] = {
-        .name = "GPU",
+        .name = "",
         .data = &gpu_clock_config,
     },
     [JUNO_CLOCK_SOC_RAM_IDX_COUNT] = {0}, /* Termination description. */

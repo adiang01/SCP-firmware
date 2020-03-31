@@ -5,13 +5,18 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <fwk_element.h>
-#include <fwk_module.h>
 #include <mod_mock_psu.h>
+
+#include <fwk_element.h>
+#include <fwk_id.h>
+#include <fwk_module.h>
+
+#include <stdbool.h>
+#include <stddef.h>
 
 static const struct fwk_element element_table[] = {
     [0] = {
-        .name = "VSYS",
+        .name = "",
         .data = &(const struct mod_mock_psu_element_cfg) {
             .async_alarm_id = FWK_ID_NONE_INIT,
             .default_enabled = true,
@@ -19,7 +24,7 @@ static const struct fwk_element element_table[] = {
         },
     },
     [1] = {
-        .name = "VBIG",
+        .name = "",
         .data = &(const struct mod_mock_psu_element_cfg) {
             .async_alarm_id = FWK_ID_NONE_INIT,
             .default_enabled = true,
@@ -27,7 +32,7 @@ static const struct fwk_element element_table[] = {
         },
     },
     [2] = {
-        .name = "VLITTLE",
+        .name = "",
         .data = &(const struct mod_mock_psu_element_cfg) {
             .async_alarm_id = FWK_ID_NONE_INIT,
             .default_enabled = true,
@@ -35,7 +40,7 @@ static const struct fwk_element element_table[] = {
         },
     },
     [3] = {
-        .name = "VGPU",
+        .name = "",
         .data = &(const struct mod_mock_psu_element_cfg) {
             .async_alarm_id = FWK_ID_NONE_INIT,
             .default_enabled = true,

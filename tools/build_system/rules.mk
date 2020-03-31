@@ -44,16 +44,7 @@ endif
 # GCC-specific optimization levels for debug and release modes
 #
 
-ifeq ($(PRODUCT)-$(FIRMWARE),juno-scp_ramfw)
-    # Enable link-time optimization
-    CFLAGS_GCC += -flto
-    LDFLAGS_GCC += -Wl,-flto
-
-    DEFAULT_OPT_GCC_DEBUG := s
-else
-    DEFAULT_OPT_GCC_DEBUG := g
-endif
-
+DEFAULT_OPT_GCC_DEBUG := g
 DEFAULT_OPT_GCC_RELEASE := 2
 
 #
@@ -133,6 +124,8 @@ CFLAGS_CLANG += -fshort-enums # Required by RTX
 
 CFLAGS += -fno-exceptions
 
+CPPFLAGS += -x c -E -P
+
 DEP_CFLAGS_GCC = -MD -MP
 
 ASFLAGS_GCC += -x
@@ -150,20 +143,32 @@ BUILTIN_LIBS_GCC := -lc -lgcc
 
 ifeq ($(MODE),release)
     O ?= $(DEFAULT_OPT_GCC_RELEASE)
+    LOG_LEVEL ?= $(DEFAULT_LOG_LEVEL_RELEASE)
 
     # Disable assertions in release mode
     DEFINES += NDEBUG
-
 else
     O ?= $(DEFAULT_OPT_GCC_DEBUG)
+    LOG_LEVEL ?= $(DEFAULT_LOG_LEVEL_DEBUG)
 
     DEFINES += BUILD_MODE_DEBUG
+endif
+
+DEFINES += FWK_LOG_LEVEL=FWK_LOG_LEVEL_$(LOG_LEVEL)
+
+ifeq ($(BUILD_HAS_DEBUGGER),yes)
+    DEFINES += BUILD_HAS_DEBUGGER
 endif
 
 #
 # Always include the framework library
 #
 INCLUDES += $(FWK_DIR)/include
+
+#
+# Always include CMSIS
+#
+INCLUDES += $(CMSIS_DIR)/Include
 
 #
 # Toolchain-independent flags

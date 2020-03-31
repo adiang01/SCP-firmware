@@ -5,12 +5,10 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <setjmp.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
+#include <internal/fwk_id.h>
+#include <internal/fwk_module.h>
+#include <internal/fwk_multi_thread.h>
+
 #include <fwk_assert.h>
 #include <fwk_element.h>
 #include <fwk_event.h>
@@ -18,9 +16,13 @@
 #include <fwk_macros.h>
 #include <fwk_status.h>
 #include <fwk_test.h>
-#include <internal/fwk_id.h>
-#include <internal/fwk_module.h>
-#include <internal/fwk_multi_thread.h>
+
+#include <setjmp.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define ELEM_THREAD_ID      10
 #define MODULE_THREAD_ID    11
@@ -90,6 +92,12 @@ uint32_t __wrap_osThreadFlagsWait(uint32_t flags, uint32_t options,
         longjmp(test_context, !FWK_SUCCESS);
     } else
         return osThreadFlagsWait_return_val[osThreadFlagsWait_count_call++];
+}
+
+uint32_t __wrap_osThreadFlagsClear(uint32_t flags)
+{
+    (void)flags;
+    return 0;
 }
 
 static uint32_t osThreadFlagsSet_return_val;
@@ -858,11 +866,12 @@ static void test_put_event_and_wait_called_from_current_thread(void)
     assert(fwk_thread_put_event_and_wait_return_val == FWK_E_ACCESS);
     assert(osThreadFlagsWait_param_flags[0] == SIGNAL_EVENT_TO_PROCESS);
         assert(osThreadFlagsWait_param_options[0] == osFlagsWaitAny);
-    assert(osThreadFlagsSet_count_call == 1);
-    assert(osThreadFlagsSet_param_thread_id[0] ==
-        (osThreadId_t)COMMON_THREAD_ID);
-    assert(osThreadFlagsSet_param_flags[0] == SIGNAL_NO_READY_THREAD);
-    assert(ctx->event_cookie_counter == 0);
+        assert(osThreadFlagsSet_count_call == 2);
+        assert(
+            osThreadFlagsSet_param_thread_id[0] ==
+            (osThreadId_t)COMMON_THREAD_ID);
+        assert(osThreadFlagsSet_param_flags[0] == SIGNAL_NO_READY_THREAD);
+        assert(ctx->event_cookie_counter == 0);
 }
 
 static void test_put_event_and_wait_event_with_response(void)

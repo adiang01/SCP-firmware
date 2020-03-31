@@ -9,26 +9,26 @@
  *     firmware.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
-#include <fwk_assert.h>
-#include <fwk_interrupt.h>
-#include <fwk_module.h>
-#include <fwk_module_idx.h>
-#include <fwk_noreturn.h>
-#include <fwk_notification.h>
-#include <fwk_status.h>
-#include <fwk_thread.h>
 #include <mod_bootloader.h>
-#include <mod_log.h>
 #include <mod_msys_rom.h>
 #include <mod_power_domain.h>
 #include <mod_ppu_v1.h>
 
+#include <fwk_assert.h>
+#include <fwk_event.h>
+#include <fwk_id.h>
+#include <fwk_log.h>
+#include <fwk_module.h>
+#include <fwk_module_idx.h>
+#include <fwk_notification.h>
+#include <fwk_status.h>
+#include <fwk_thread.h>
+
+#include <stdbool.h>
+#include <string.h>
+
 struct msys_rom_ctx {
     const struct msys_rom_config *rom_config;
-    struct mod_log_api *log_api;
     struct ppu_v1_boot_api *ppu_boot_api;
     struct mod_bootloader_api *bootloader_api;
     unsigned int notification_count; /* Notifications awaiting a response */
@@ -38,34 +38,6 @@ enum rom_event {
     ROM_EVENT_RUN,
     ROM_EVENT_COUNT
 };
-
-/*
- * This function assumes that the RAM firmware image is located at the beginning
- * of the SCP SRAM. The reset handler will be at offset 0x4.
- */
-static noreturn void msys_jump_to_ramfw(void)
-{
-    uintptr_t const *reset_base =
-        (uintptr_t *)(ctx.rom_config->ramfw_base + 0x4);
-    void (*ramfw_reset_handler)(void);
-
-    /*
-     * Disable interrupts for the duration of the ROM firmware to RAM firmware
-     * transition.
-     */
-    fwk_interrupt_global_disable();
-
-    ramfw_reset_handler = (void (*)(void))*reset_base;
-
-    /*
-     * Execute the RAM firmware's reset handler to pass control from ROM
-     * firmware to the RAM firmware.
-     */
-    ramfw_reset_handler();
-
-    while (true)
-        continue;
-}
 
 static int msys_deferred_setup(void)
 {
@@ -80,18 +52,13 @@ static int msys_deferred_setup(void)
     ctx.ppu_boot_api->power_mode_on(ctx.rom_config->id_primary_cluster);
     ctx.ppu_boot_api->power_mode_on(ctx.rom_config->id_primary_core);
 
-    ctx.log_api->log(MOD_LOG_GROUP_INFO, "[SYSTEM] Primary CPU powered\n");
+    FWK_LOG_INFO("[SYSTEM] Primary CPU powered");
 
     status = ctx.bootloader_api->load_image();
-    if (status != FWK_SUCCESS) {
-        ctx.log_api->log(MOD_LOG_GROUP_ERROR,
-                         "[SYSTEM] Failed to load RAM firmware image\n");
-        return FWK_E_DATA;
-    }
 
-    msys_jump_to_ramfw();
+    FWK_LOG_ERR("[SYSTEM] Failed to load RAM firmware image: %d", status);
 
-    return FWK_SUCCESS;
+    return FWK_E_DATA;
 }
 
 /*
@@ -116,14 +83,6 @@ static int msys_rom_bind(fwk_id_t id, unsigned int round)
 
     /* Use second round only (round numbering is zero-indexed) */
     if (round == 1) {
-
-        /* Bind to the log component */
-        status = fwk_module_bind(FWK_ID_MODULE(FWK_MODULE_IDX_LOG),
-                                 FWK_ID_API(FWK_MODULE_IDX_LOG, 0),
-                                 &ctx.log_api);
-
-        if (status != FWK_SUCCESS)
-            return FWK_E_PANIC;
 
         /* Bind to the PPU module */
         status = fwk_module_bind(FWK_ID_MODULE(FWK_MODULE_IDX_PPU_V1),

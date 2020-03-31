@@ -5,18 +5,25 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include "juno_clock.h"
+#include "juno_id.h"
+#include "juno_mmap.h"
+#include "juno_scc.h"
+
+#include <mod_clock.h>
+#include <mod_juno_cdcel937.h>
+#include <mod_juno_hdlcd.h>
+
 #include <fwk_assert.h>
 #include <fwk_element.h>
 #include <fwk_id.h>
 #include <fwk_macros.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
-#include <mod_juno_cdcel937.h>
-#include <mod_juno_hdlcd.h>
-#include <mod_clock.h>
-#include <juno_clock.h>
-#include <juno_id.h>
-#include <juno_scc.h>
+#include <fwk_status.h>
+
+#include <stddef.h>
+#include <stdint.h>
 
 enum juno_hdlcd_element_idx {
     JUNO_HDLCD_ELEMENT_IDX_HDLCD0,
@@ -26,7 +33,7 @@ enum juno_hdlcd_element_idx {
 
 static const struct fwk_element juno_hdlcd_element_table[] = {
     [JUNO_CLOCK_HDLCD_IDX_HDLCD0] = {
-        .name = "HDLCD_0",
+        .name = "",
         .data = &(struct mod_juno_hdlcd_dev_config) {
             .driver_id = FWK_ID_ELEMENT_INIT(FWK_MODULE_IDX_JUNO_CDCEL937,
                 JUNO_CLOCK_CDCEL937_IDX_HDLCD0),
@@ -43,7 +50,7 @@ static const struct fwk_element juno_hdlcd_element_table[] = {
         }
     },
     [JUNO_CLOCK_HDLCD_IDX_HDLCD1] = {
-        .name = "HDLCD_1",
+        .name = "",
         .data = &(struct mod_juno_hdlcd_dev_config) {
             .driver_id = FWK_ID_ELEMENT_INIT(FWK_MODULE_IDX_JUNO_CDCEL937,
                 JUNO_CLOCK_CDCEL937_IDX_HDLCD1),

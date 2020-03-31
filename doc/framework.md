@@ -66,8 +66,7 @@ represents a software image that is built as part of a product. Each firmware
 lists the modules that will be built into its image and provides configuration
 data for each of these modules.
 
-For each firmware, linker information must be provided in a *fmw_memory.ld.S*
-file:
+For each firmware, linker information must be provided in a *fmw_memory.h* file:
 
 - FIRMWARE_MEM_MODE: The desired memory region configuration. Can be one of the
     following:
@@ -78,6 +77,8 @@ file:
     used regardless of the memory region configuration given by
     *FIRMWARE_MEM_MODE*.
 - FIRMWARE_MEM0_SIZE: The size of the MEM0 region in bytes.
+- FIRMWARE_STACK_SIZE (if multithreading enabled): The size of each individual
+    thread stack in bytes.
 
 If a dual-region memory configuration is used then *FIRMWARE_MEM1_BASE* and
 *FIRMWARE_MEM1_SIZE* must also be defined.
@@ -97,7 +98,7 @@ firmware_root/
     config_module_a.c
     config_module_b.c
     firmware.mk
-    fmw_memory.ld.s
+    fmw_memory.h
 \endcode
 
 ### Modules

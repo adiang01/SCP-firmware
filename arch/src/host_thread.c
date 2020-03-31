@@ -10,10 +10,12 @@
 
 #include <cmsis_os2.h>
 #include <pthread.h>
-#include <stdbool.h>
 #include <unistd.h>
+
 #include <fwk_assert.h>
 #include <fwk_mm.h>
+
+#include <stdbool.h>
 
 /* CMSIS-RTOS2 thread context data */
 struct thread_data {
@@ -140,7 +142,9 @@ uint32_t osThreadFlagsWait(uint32_t flags, uint32_t options, uint32_t timeout)
     }
 
     tmp_signal_flags = local_thread_data->signal_flags;
-    local_thread_data->signal_flags &= ~flags;
+
+    if (!(options & osFlagsNoClear))
+        local_thread_data->signal_flags &= ~flags;
 
     return tmp_signal_flags;
 }
@@ -163,6 +167,15 @@ uint32_t osThreadFlagsSet(osThreadId_t thread_id, uint32_t flags)
     return flags;
 }
 
+uint32_t osThreadFlagsClear(uint32_t flags)
+{
+    uint32_t old_flags = local_thread_data->signal_flags;
+
+    local_thread_data->signal_flags &= ~flags;
+
+    return old_flags;
+}
+
 osThreadId_t osThreadNew(osThreadFunc_t func, void *argument,
     const osThreadAttr_t *attr)
 {
@@ -171,12 +184,8 @@ osThreadId_t osThreadNew(osThreadFunc_t func, void *argument,
     pthread_t *pthread_id;
 
     thread_data = fwk_mm_calloc(1, sizeof(struct thread_data));
-    if (thread_data == NULL)
-        return NULL;
 
     pthread_id = fwk_mm_calloc(1, sizeof(pthread_t));
-    if (pthread_id == NULL)
-        return NULL;
 
     status = pthread_cond_init(&thread_data->cond, NULL);
     if (status != 0)

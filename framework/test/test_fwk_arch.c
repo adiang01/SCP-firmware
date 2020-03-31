@@ -5,12 +5,13 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <stdbool.h>
-#include <fwk_assert.h>
 #include <fwk_arch.h>
+#include <fwk_assert.h>
 #include <fwk_macros.h>
 #include <fwk_status.h>
 #include <fwk_test.h>
+
+#include <stdbool.h>
 
 static int fwk_mm_init_return_val;
 static int mm_init_handler_return_val;
@@ -21,7 +22,7 @@ static int __fwk_module_init_return_val;
 /*
  * Mock functions
  */
-int fwk_mm_init(uintptr_t start, size_t size)
+int __wrap_fwk_mm_init(uintptr_t start, size_t size)
 {
     return fwk_mm_init_return_val;
 }
@@ -41,7 +42,7 @@ int interrupt_init_handler(struct fwk_arch_interrupt_driver **driver)
     return interrupt_init_handler_return_val;
 }
 
-int __fwk_module_init(void)
+int __wrap___fwk_module_init(void)
 {
     return __fwk_module_init_return_val;
 }

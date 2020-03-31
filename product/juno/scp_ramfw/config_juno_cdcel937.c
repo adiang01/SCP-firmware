@@ -5,18 +5,25 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include "juno_clock.h"
+#include "juno_id.h"
+#include "juno_mmap.h"
+#include "juno_scc.h"
+
+#include <mod_clock.h>
+#include <mod_juno_cdcel937.h>
+#include <mod_juno_hdlcd.h>
+
 #include <fwk_assert.h>
 #include <fwk_element.h>
 #include <fwk_id.h>
 #include <fwk_macros.h>
 #include <fwk_module.h>
 #include <fwk_module_idx.h>
-#include <mod_clock.h>
-#include <mod_juno_cdcel937.h>
-#include <mod_juno_hdlcd.h>
-#include <juno_clock.h>
-#include <juno_id.h>
-#include <juno_mmap.h>
+#include <fwk_status.h>
+
+#include <stddef.h>
+#include <stdint.h>
 
 static struct juno_clock_lookup i2s_lookup_table[] = {
     {
@@ -51,7 +58,7 @@ static struct juno_clock_lookup i2s_lookup_table[] = {
 
 static const struct fwk_element juno_cdcel937_element_table[] = {
     [JUNO_CLOCK_CDCEL937_IDX_I2SCLK] = {
-        .name = "I2SCLK",
+        .name = "",
         .data = &(struct mod_juno_cdcel937_dev_config) {
             .slave_address = 0x6D,
             .xin_mhz = 24,
@@ -69,7 +76,7 @@ static const struct fwk_element juno_cdcel937_element_table[] = {
         }
     },
     [JUNO_CLOCK_CDCEL937_IDX_HDLCDREFCLK] = {
-        .name = "HDLCDREFCLK",
+        .name = "",
         .data = &(struct mod_juno_cdcel937_dev_config) {
             .slave_address = 0x6C,
             .xin_mhz = 24,
@@ -85,7 +92,7 @@ static const struct fwk_element juno_cdcel937_element_table[] = {
         }
     },
     [JUNO_CLOCK_CDCEL937_IDX_HDLCDPXL] = {
-        .name = "HDLCDPXL",
+        .name = "",
         .data = &(struct mod_juno_cdcel937_dev_config) {
             .slave_address = 0x6D,
             .xin_mhz = 24,
@@ -101,7 +108,7 @@ static const struct fwk_element juno_cdcel937_element_table[] = {
         }
     },
     [JUNO_CLOCK_CDCEL937_IDX_HDLCD0] = {
-        .name = "CDCEL_HDLCD0",
+        .name = "",
         .data = &(struct mod_juno_cdcel937_dev_config) {
             .slave_address = 0x6C,
             .xin_mhz = 24,
@@ -117,7 +124,7 @@ static const struct fwk_element juno_cdcel937_element_table[] = {
         }
     },
     [JUNO_CLOCK_CDCEL937_IDX_HDLCD1] = {
-        .name = "CDCEL_HDLCD1",
+        .name = "",
         .data = &(struct mod_juno_cdcel937_dev_config) {
             .slave_address = 0x6C,
             .xin_mhz = 24,
